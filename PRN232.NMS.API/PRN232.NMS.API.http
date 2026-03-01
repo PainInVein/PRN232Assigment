@@ -1,0 +1,6 @@
+@PRN232.NMS.API_HostAddress = http://localhost:5130
+
+GET {{PRN232.NMS.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
