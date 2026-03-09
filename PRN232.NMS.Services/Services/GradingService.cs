@@ -343,8 +343,7 @@ public class GradingService
         string err = await p.StandardError.ReadToEndAsync();
         await p.WaitForExitAsync();
 
-        logs.AddRange(output.Split('\n', StringSplitOptions.RemoveEmptyEntries));
-        if (!string.IsNullOrWhiteSpace(err)) logs.AddRange(err.Split('\n'));
+        logs.Add("Build Succeeded");
 
         return p.ExitCode == 0;
     }
@@ -504,21 +503,20 @@ public class GradingService
                 // Resolve path through route map (handles students who used different route names)
                 string resolvedPath = routes.Resolve(t.Method, t.Path, t.PathHint);
                 var msg = new HttpRequestMessage(t.Method, resolvedPath);
-
-                // Add OData header
-                msg.Headers.TryAddWithoutValidation(
-                    "Accept",
-                    "application/json;odata.metadata=minimal;odata.streaming=true"
-                );
-
                 if (t.JsonBody != null)
+                    msg.Content = new StringContent(t.JsonBody, Encoding.UTF8, "application/json");
+
+                // Attach bearer token when credentials are provided
+                if (!string.IsNullOrEmpty(t.BearerTokenEmail))
                 {
-                    msg.Content = new StringContent(t.JsonBody, Encoding.UTF8);
-                    msg.Content.Headers.TryAddWithoutValidation(
-                        "Content-Type",
-                        "application/json;odata.metadata=minimal;odata.streaming=true"
-                    );
+                    var token = await FetchTokenAsync(baseUrl, t.BearerTokenEmail, t.BearerTokenPassword ?? "@1", gradingLogs, routes);
+                    if (token != null)
+                        msg.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                    else
+                        gradingLogs.Add($"[WARN] No token for {t.BearerTokenEmail} — \"{t.Name}\" will run without auth (path: {resolvedPath})");
                 }
+
+
 
                 var resp = await client.SendAsync(msg);
 
