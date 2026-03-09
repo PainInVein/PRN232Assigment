@@ -10,4 +10,9 @@
     <ProjectReference Include="..\PRN232.NMS.Repo\PRN232.NMS.Repo.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Helpers\HelperClasses\" />
+    <Folder Include="Interfaces\" />
+  </ItemGroup>
+
 </Project>

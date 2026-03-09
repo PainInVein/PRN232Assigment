@@ -1,16 +1,17 @@
-using PRN232.NMS.Services.Interfaces;
-using PRN232.NMS.Services;
+using Grader.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PRN232.NMS.API.Models.MappingTool;
 using PRN232.NMS.API.Models.RequestModels;
-using Microsoft.AspNetCore.Mvc;
+using PRN232.NMS.Repo.DBContext;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddScoped<IModelStateCheck, ModelStateCheck>();
-builder.Services.AddScoped<ISystemAccountService, SystemAccountService>();
-builder.Services.AddScoped<ITagService, TagService>();
-
+builder.Services.AddScoped<GradingService>();
+builder.Services.AddDbContext<Prn232lab3Context>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
