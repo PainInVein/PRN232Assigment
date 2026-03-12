@@ -1,4 +1,4 @@
-﻿namespace PRN232.NMS.API
+﻿namespace PRN232.NMS.Services
 {
     public class GradingRequest
     {

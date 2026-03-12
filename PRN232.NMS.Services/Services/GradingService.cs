@@ -2,10 +2,10 @@
 using Microsoft.Extensions.Logging;
 using PRN232.NMS.Repo.DBContext;
 using PRN232.NMS.Repo.Entities;
-using PRN232.NMS.API;
-using PRN232.NMS.API.Helpers.HelperClasses;
-using PRN232.NMS.API.Helpers.HelperEntities;
-using PRN232.NMS.API.Services;
+using PRN232.NMS.Services;
+using PRN232.NMS.Services.Helpers.HelperClasses;
+using PRN232.NMS.Services.Helpers.HelperEntities;
+using PRN232.NMS.Services.Services;
 using System.Diagnostics;
 
 namespace Grader.Services;

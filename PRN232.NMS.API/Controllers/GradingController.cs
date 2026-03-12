@@ -1,6 +1,6 @@
 ﻿using Grader.Services;
 using Microsoft.AspNetCore.Mvc;
-using PRN232.NMS.API;
+using PRN232.NMS.Services;
 
 namespace PRN232.NMS.API.Controllers
 {

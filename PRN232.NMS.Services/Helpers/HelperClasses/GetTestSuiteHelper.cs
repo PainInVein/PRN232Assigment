@@ -1,11 +1,6 @@
-﻿using PRN232.NMS.API.Helpers.HelperEntities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using PRN232.NMS.Services.Helpers.HelperEntities;
 
-namespace PRN232.NMS.API.Helpers.HelperClasses
+namespace PRN232.NMS.Services.Helpers.HelperClasses
 {
     // Lớp này trả về một danh sách test case
     public class GetTestSuiteHelper

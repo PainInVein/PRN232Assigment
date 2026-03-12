@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace PRN232.NMS.API.Helpers.HelperClasses
+namespace PRN232.NMS.Services.Helpers.HelperClasses
 {
     public class StudentConnectionStringHelper
     {

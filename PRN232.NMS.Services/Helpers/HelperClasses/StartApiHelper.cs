@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace PRN232.NMS.API.Helpers.HelperClasses
+namespace PRN232.NMS.Services.Helpers.HelperClasses
 {
     public class StartApiHelper
     {

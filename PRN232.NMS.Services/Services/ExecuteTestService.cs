@@ -1,5 +1,5 @@
-﻿using PRN232.NMS.API.Helpers.HelperClasses;
-using PRN232.NMS.API.Helpers.HelperEntities;
+﻿using PRN232.NMS.Services.Helpers.HelperClasses;
+using PRN232.NMS.Services.Helpers.HelperEntities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static Grader.Services.GradingService;
 
-namespace PRN232.NMS.API.Services
+namespace PRN232.NMS.Services.Services
 {
     public class ExecuteTestService
     {

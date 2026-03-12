@@ -3,9 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PRN232.NMS.API.Models.MappingTool;
 using PRN232.NMS.API.Models.RequestModels;
-using PRN232.NMS.API.Services;
 using PRN232.NMS.Repo.DBContext;
-using PRN232.NMS.API.Helpers.HelperClasses;
+using PRN232.NMS.Services.Helpers.HelperClasses;
 using PRN232.NMS.Services.Services;
 
 var builder = WebApplication.CreateBuilder(args);

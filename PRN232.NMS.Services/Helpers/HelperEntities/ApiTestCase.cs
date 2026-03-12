@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PRN232.NMS.API.Helpers.HelperEntities
+namespace PRN232.NMS.Services.Helpers.HelperEntities
 {
     public class ApiTestCase
     {
