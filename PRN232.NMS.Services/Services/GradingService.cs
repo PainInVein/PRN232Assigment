@@ -1,15 +1,12 @@
-﻿using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PRN232.NMS.Repo.DBContext;
 using PRN232.NMS.Repo.Entities;
 using PRN232.NMS.Services;
 using PRN232.NMS.Services.Helpers.HelperClasses;
 using PRN232.NMS.Services.Helpers.HelperEntities;
+using PRN232.NMS.Services.Services;
 using System.Diagnostics;
-using System.Net.Sockets;
-using System.Text;
-using System.Text.Json;
 
 namespace Grader.Services;
 
@@ -18,22 +15,26 @@ public class GradingService
     private readonly ILogger<GradingService> _logger;
     private readonly Prn232lab3Context _graderDb;
     private readonly IClassHelperFacade _helperFacade;
+    private readonly ExecuteTestService _executeTestService;
 
     public GradingService(
         ILogger<GradingService> logger,
         IConfiguration config,
         Prn232lab3Context graderDb,
-        IClassHelperFacade helperFacade
+        IClassHelperFacade helperFacade,
+        ExecuteTestService executeTestService
         )
     {
         _logger = logger;
         _graderDb = graderDb;
         _helperFacade = helperFacade;
+        _executeTestService = executeTestService;
     }
 
-    public async Task<GradingResultHere> GradeAsync(GradingRequest req, CancellationToken ct = default)
+    // Service cham diem chinh, tra ve chi tiet ket qua de hien thi tren UI, va luu vao database
+    public async Task<GradingResultWithListLogs> GradeAsync(GradingRequest req, CancellationToken ct = default)
     {
-        var result = new GradingResultHere
+        var result = new GradingResultWithListLogs
         {
             ProjectFolder = req.ProjectFolder,
             Logs = new List<string> { $"Started grading at {DateTimeOffset.Now:HH:mm:ss}" }
@@ -93,7 +94,7 @@ public class GradingService
             var routeMap = await _helperFacade.DiscoverRoutesAsync(baseUrl, result.Logs);
 
             // Chay qua từng test case, sử dụng routeMap để resolve đường dẫn chính xác, và tính điểm
-            var outcomes = await ExecuteApiTestsAsync(baseUrl, result.Logs, routeMap);
+            var outcomes = await _executeTestService.ExecuteApiTestsAsync(baseUrl, result.Logs, routeMap);
             result.Score = outcomes.Where(o => o.Passed).Sum(o => o.Points);
             result.Logs.AddRange(outcomes.Select(o => $"{o.Name,-32} {(o.Passed ? "PASS" : "FAIL"),-6} {o.Points,3} pts  {o.Message ?? ""}"));
 
@@ -130,153 +131,10 @@ public class GradingService
                 Score = result.Score,
                 Logs = string.Join("\n", result.Logs),
             };
-
-
             await SaveResultAsync(mappedResult);
         }
 
         return result;
-    }
-
-    //private
-    public async Task<List<TestOutcome>> ExecuteApiTestsAsync(string baseUrl, List<string> gradingLogs, RouteMap routes)
-    {
-        var tests = _helperFacade.GetTestSuite();
-        var outcomes = new List<TestOutcome>();
-        using var client = new HttpClient { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromSeconds(6) };
-
-        foreach (var t in tests)
-        {
-            try
-            {
-                // Resolve path through route map (handles students who used different route names)
-                string resolvedPath = routes.Resolve(t.Method, t.Path, t.PathHint);
-                var msg = new HttpRequestMessage(t.Method, resolvedPath);
-                if (t.JsonBody != null)
-                    msg.Content = new StringContent(t.JsonBody, Encoding.UTF8, "application/json");
-
-                // Attach bearer token when credentials are provided
-                if (!string.IsNullOrEmpty(t.BearerTokenEmail))
-                {
-                    var token = await _helperFacade.FetchTokenAsync(baseUrl, t.BearerTokenEmail, t.BearerTokenPassword ?? "@1", gradingLogs, routes);
-                    if (token != null)
-                        msg.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-                    else
-                        gradingLogs.Add($"[WARN] No token for {t.BearerTokenEmail} — \"{t.Name}\" will run without auth (path: {resolvedPath})");
-                }
-
-
-
-                var resp = await client.SendAsync(msg);
-
-                string? body = null;
-                if (t.ExpectedContentContains != null || !resp.IsSuccessStatusCode)
-                    body = await resp.Content.ReadAsStringAsync();
-
-                bool contentOk = t.ExpectedContentContains == null ||
-                                 (body?.Contains(t.ExpectedContentContains, StringComparison.OrdinalIgnoreCase) ?? false);
-
-                // Accept alternate status codes (200 OR 201, 200 OR 204, etc.)
-                int actual = (int)resp.StatusCode;
-                bool statusOk = actual == t.ExpectedStatus ||
-                                (t.AlternateStatus.HasValue && actual == t.AlternateStatus.Value);
-
-                bool pass = statusOk && contentOk;
-                int bodyLen = body?.Length ?? 0;
-
-                outcomes.Add(new TestOutcome
-                {
-                    Name = t.Name,
-                    Passed = pass,
-                    Points = pass ? t.Points : 0,
-                    Message = pass ? null : $"Status={actual}, expected {t.ExpectedStatus}{(t.AlternateStatus.HasValue ? $" or {t.AlternateStatus}" : "")}. Body: {body?[..Math.Min(150, bodyLen)]}..."
-                });
-            }
-            catch (Exception ex)
-            {
-                outcomes.Add(new TestOutcome
-                {
-                    Name = t.Name,
-                    Passed = false,
-                    Points = 0,
-                    Message = ex.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase) ? "Timeout" : $"Exception: {ex.Message}"
-                });
-            }
-        }
-        return outcomes;
-    }
-
-    public class RouteMap
-    {
-        // key: (METHOD, path_hint_keyword)  value: actual path on this student's API
-        private readonly Dictionary<string, string> _map = new(StringComparer.OrdinalIgnoreCase);
-        public string? AuthPath { get; set; }
-        public string? ProfileCollectionPath { get; set; }  // the /api/XxxProfile  path
-        public string? ProfileItemPath { get; set; }        // the /api/XxxProfile/{id} path
-        public List<string> AllPaths { get; } = new();
-
-        public void Add(string method, string hint, string actualPath) =>
-            _map[$"{method.ToUpper()}:{hint.ToLower()}"] = actualPath;
-
-        /// <summary>
-        /// Given an expected path like "/api/LeopardProfile" or "/api/LeopardProfile/1",
-        /// return the discovered equivalent on this student's API.
-        /// Falls back to the original path if nothing found.
-        /// </summary>
-        public string Resolve(HttpMethod method, string expectedPath, string? hint = null)
-        {
-            // ── OData hint: find /search sub-path or fall back to collection ──
-            if (hint == "odata")
-            {
-                var odataQuery = expectedPath.Contains('?') ? expectedPath.Substring(expectedPath.IndexOf('?')) : "";
-                var searchPath = AllPaths.FirstOrDefault(p =>
-                    p.EndsWith("/search", StringComparison.OrdinalIgnoreCase) &&
-                    (p.Contains("leopard", StringComparison.OrdinalIgnoreCase) || p.Contains("profile", StringComparison.OrdinalIgnoreCase)));
-                if (searchPath != null) return searchPath + odataQuery;
-                if (ProfileCollectionPath != null) return ProfileCollectionPath + odataQuery;
-            }
-
-            // ── DELETE hint: handle students who use query param ?id=N instead of route /{id} ──
-            if (hint != null && hint.StartsWith("delete_") && int.TryParse(hint.Substring(7), out int deleteId))
-            {
-                if (ProfileItemPath != null)
-                    return ProfileItemPath.Replace("{id}", deleteId.ToString(), StringComparison.OrdinalIgnoreCase)
-                                         .Replace("{Id}", deleteId.ToString());
-                if (ProfileCollectionPath != null)
-                    return $"{ProfileCollectionPath}?id={deleteId}";
-            }
-
-            // ── Explicit map hint ──────────────────────────────────────────────
-            if (hint != null && _map.TryGetValue($"{method.Method.ToUpper()}:{hint.ToLower()}", out var byHint))
-                return byHint;
-
-            // ── Direct match ───────────────────────────────────────────────────
-            if (AllPaths.Contains(expectedPath, StringComparer.OrdinalIgnoreCase))
-                return expectedPath;
-
-            // ── Pattern matching ───────────────────────────────────────────────
-            var lower = expectedPath.ToLower();
-
-            if (lower.Contains("leopardprofile") || lower.Contains("leopard"))
-            {
-                var parts = expectedPath.Trim('/').Split('/');
-                bool hasId = parts.Length > 0 && (int.TryParse(parts[^1], out _) || parts[^1].StartsWith("{"));
-                bool hasOdata = expectedPath.Contains('?');
-
-                if (hasOdata && ProfileCollectionPath != null)
-                    return ProfileCollectionPath + expectedPath.Substring(expectedPath.IndexOf('?'));
-                if (hasId && ProfileItemPath != null)
-                    return ProfileItemPath.Replace("{id}", parts[^1], StringComparison.OrdinalIgnoreCase)
-                                         .Replace("{Id}", parts[^1]);
-                if (!hasId && ProfileCollectionPath != null)
-                    return ProfileCollectionPath;
-            }
-
-            if ((lower.Contains("auth") || lower.Contains("login")) && method == HttpMethod.Post && AuthPath != null)
-                return AuthPath;
-
-            return expectedPath; // fallback — use original
-        }
     }
 
     //private
@@ -294,14 +152,5 @@ public class GradingService
 
         _graderDb.GradingResults.Add(entity);
         await _graderDb.SaveChangesAsync();
-    }
-
-    public class GradingResultHere
-    {
-        public string ProjectFolder { get; set; } = null!;
-        public string Status { get; set; } = null!;
-        public int Score { get; set; }
-        public List<string> Logs { get; set; } = new();
-        public DateTime FinishedAt { get; set; }
     }
 }

@@ -5,12 +5,14 @@ using PRN232.NMS.API.Models.MappingTool;
 using PRN232.NMS.API.Models.RequestModels;
 using PRN232.NMS.Repo.DBContext;
 using PRN232.NMS.Services.Helpers.HelperClasses;
+using PRN232.NMS.Services.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddScoped<IModelStateCheck, ModelStateCheck>();
 builder.Services.AddScoped<GradingService>();
+builder.Services.AddScoped<ExecuteTestService>();
 builder.Services.AddDbContext<Prn232lab3Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddControllers();
