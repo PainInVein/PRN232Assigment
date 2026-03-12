@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PRN232.NMS.Services.Helpers.HelperClasses
+namespace PRN232.NMS.API.Helpers.HelperClasses
 {
     public class TryDropDatabaseHelper
     {
-        private readonly string _masterConnStr = "Server=DESKTOP-H9I435N\\SQLEXPRESS;User Id=sa;Password=1;TrustServerCertificate=true;";
+        private readonly string _masterConnStr = "Server=DESKTOP-OEQ9HFB\\SQLEXPRESS;User Id=sa;Password=12345;TrustServerCertificate=true;";
 
         public async Task TryDropDatabaseAsync(string dbName)
         {

@@ -1,9 +1,9 @@
-﻿using PRN232.NMS.Services.Helpers.HelperEntities;
+﻿using PRN232.NMS.API.Helpers.HelperEntities;
 using System.Text;
 using System.Text.Json;
 using static Grader.Services.GradingService;
 
-namespace PRN232.NMS.Services.Helpers.HelperClasses
+namespace PRN232.NMS.API.Helpers.HelperClasses
 {
     public class TokenHelper
     {

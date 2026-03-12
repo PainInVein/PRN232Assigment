@@ -1,4 +1,4 @@
-﻿using PRN232.NMS.Services.Helpers.HelperEntities;
+﻿using PRN232.NMS.API.Helpers.HelperEntities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using static Grader.Services.GradingService;
 
-namespace PRN232.NMS.Services.Helpers.HelperClasses
+namespace PRN232.NMS.API.Helpers.HelperClasses
 {
     public class DiscoverRoutesHelper
     {

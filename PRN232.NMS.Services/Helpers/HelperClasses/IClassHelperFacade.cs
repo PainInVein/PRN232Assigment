@@ -1,8 +1,8 @@
-﻿using PRN232.NMS.Services.Helpers.HelperEntities;
+﻿using PRN232.NMS.API.Helpers.HelperEntities;
 using System.Diagnostics;
 using static Grader.Services.GradingService;
 
-namespace PRN232.NMS.Services.Helpers.HelperClasses
+namespace PRN232.NMS.API.Helpers.HelperClasses
 {
     public interface IClassHelperFacade
     {

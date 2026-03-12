@@ -3,8 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PRN232.NMS.API.Models.MappingTool;
 using PRN232.NMS.API.Models.RequestModels;
+using PRN232.NMS.API.Services;
 using PRN232.NMS.Repo.DBContext;
-using PRN232.NMS.Services.Helpers.HelperClasses;
+using PRN232.NMS.API.Helpers.HelperClasses;
 using PRN232.NMS.Services.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IModelStateCheck, ModelStateCheck>();
 builder.Services.AddScoped<GradingService>();
 builder.Services.AddScoped<ExecuteTestService>();
+builder.Services.AddScoped<FolderService>();
 builder.Services.AddDbContext<Prn232lab3Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddControllers();

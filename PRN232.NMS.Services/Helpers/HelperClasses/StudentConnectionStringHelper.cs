@@ -5,12 +5,12 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace PRN232.NMS.Services.Helpers.HelperClasses
+namespace PRN232.NMS.API.Helpers.HelperClasses
 {
     public class StudentConnectionStringHelper
     {
         public string BuildStudentConnectionString(string dbName) =>
-        $"Data Source=DESKTOP-H9I435N\\SQLEXPRESS;Initial Catalog={dbName};User ID=sa;Password=1;TrustServerCertificate=true;";
+        $"Data Source=DESKTOP-OEQ9HFB\\SQLEXPRESS;Initial Catalog={dbName};User ID=sa;Password=12345;TrustServerCertificate=true;";
 
         public async Task PatchConnectionStringAsync(string projectDir, string connStr)
         {

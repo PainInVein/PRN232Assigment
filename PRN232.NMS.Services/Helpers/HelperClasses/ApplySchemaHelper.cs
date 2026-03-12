@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace PRN232.NMS.Services.Helpers.HelperClasses
+namespace PRN232.NMS.API.Helpers.HelperClasses
 {
     public class ApplySchemaHelper
     {
@@ -10,7 +10,7 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
             var psi = new ProcessStartInfo
             {
                 FileName = "sqlcmd",
-                Arguments = $@"-S DESKTOP-H9I435N\SQLEXPRESS -U sa -P 1 -d {dbName} -i ""{_schemaPath}""",
+                Arguments = $@"-S DESKTOP-OEQ9HFB\SQLEXPRESS -U sa -P 12345 -d {dbName} -i ""{_schemaPath}""",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
