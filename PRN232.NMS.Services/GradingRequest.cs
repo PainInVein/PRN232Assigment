@@ -2,7 +2,6 @@
 {
     public class GradingRequest
     {
-        public int StudentId { get; set; }
-        public string ProjectFolder { get; set; } = null!;  // C:\students\student123
+        public string ProjectFolder { get; set; } = null!;  // C:\\Users\\Admin\\Desktop\\SE171286_ThinhVQSE171286
     }
 }

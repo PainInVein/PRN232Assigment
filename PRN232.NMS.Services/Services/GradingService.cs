@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using PRN232.NMS.Repo.DBContext;
 using PRN232.NMS.Repo.Entities;
 using PRN232.NMS.Services;
+using PRN232.NMS.Services.Helpers.HelperClasses;
 using PRN232.NMS.Services.Helpers.HelperEntities;
 using System.Diagnostics;
 using System.Net.Sockets;
@@ -18,25 +19,28 @@ public class GradingService
     private readonly Prn232lab3Context _graderDb;
     private readonly string _masterConnStr;
     private readonly string _schemaPath;
+    private readonly IClassHelperFacade _helperFacade;
 
     public GradingService(
         ILogger<GradingService> logger,
         IConfiguration config,
-        Prn232lab3Context graderDb)
+        Prn232lab3Context graderDb,
+        IClassHelperFacade helperFacade
+        )
     {
         _logger = logger;
         _graderDb = graderDb;
         _masterConnStr = "Server=DESKTOP-H9I435N\\SQLEXPRESS;User Id=sa;Password=1;TrustServerCertificate=true;";
         _schemaPath = @"C:\Users\Admin\Desktop\PRNGrading\SU25LeopardDB.sql";
+        _helperFacade = helperFacade;
     }
 
     public async Task<GradingResultHere> GradeAsync(GradingRequest req, CancellationToken ct = default)
     {
         var result = new GradingResultHere
         {
-            StudentId = req.StudentId,
             ProjectFolder = req.ProjectFolder,
-            Logs = new List<string> { $"Started grading {req.StudentId} at {DateTimeOffset.Now:HH:mm:ss}" }
+            Logs = new List<string> { $"Started grading at {DateTimeOffset.Now:HH:mm:ss}" }
         };
 
 
@@ -46,29 +50,29 @@ public class GradingService
 
         try
         {
-            // ── 1. Prepare isolated copy ────────────────────────────────────────
+            // Chỗ này copy project submission vào temp folder
             var baseTempFolder = @"C:\Users\Admin\Desktop\PRNGrading";
-            tempDir = Path.Combine(baseTempFolder, $"grade-{req.StudentId}-{Guid.NewGuid():N}");
+            tempDir = Path.Combine(baseTempFolder, $"grade-{Guid.NewGuid():N}");
             Directory.CreateDirectory(tempDir);
-            CopyDirectory(req.ProjectFolder, tempDir);
+            _helperFacade.CopyDirectory(req.ProjectFolder, tempDir);
             result.Logs.Add("Project copied to temporary folder");
 
-            // ── 2. Create unique database ───────────────────────────────────────
+            // Chỗ này tạo database tạm thời cho sinh viên
             var guidPart = Guid.NewGuid().ToString("N")[..8];
-            dbName = $"Grade_{req.StudentId}_{DateTime.UtcNow:yyyyMMddHHmmss}_{guidPart}";
-            await CreateDatabaseAsync(dbName);
+            dbName = $"Grade_{DateTime.UtcNow:yyyyMMddHHmmss}_{guidPart}";
+            await _helperFacade.CreateDatabaseAsync(dbName);
             result.Logs.Add($"Database {dbName} created");
 
-            var studentConnStr = BuildStudentConnectionString(dbName);
-            await ApplySchemaAsync(dbName);
+            var studentConnStr = _helperFacade.BuildStudentConnectionString(dbName);
+            await _helperFacade.ApplySchemaAsync(dbName);
             result.Logs.Add("Schema applied");
 
-            // ── 3. Patch connection string in appsettings.json ──────────────────
-            await PatchConnectionStringAsync(tempDir, studentConnStr);
+            // Chỉnh sửa connection string trong project để trỏ vào database mới tạo
+            await _helperFacade.PatchConnectionStringAsync(tempDir, studentConnStr);
             result.Logs.Add("Connection string updated");
 
-            // ── 4. Build ────────────────────────────────────────────────────────
-            bool buildOk = await BuildAsync(tempDir, result.Logs);
+            // Build project
+            bool buildOk = await _helperFacade.BuildAsync(tempDir, result.Logs);
             if (!buildOk)
             {
                 result.Status = "BuildFailed";
@@ -76,12 +80,12 @@ public class GradingService
                 return result;
             }
 
-            // ── 5. Start API ────────────────────────────────────────────────────
-            int port = GetFreePort(5100, 5200);
+            // Chạy API từ temp folder, truyền logs vào để capture output
+            int port = _helperFacade.GetFreePort(5100, 5200);
             string baseUrl = $"http://localhost:{port}";
-            apiProcess = StartApi(tempDir, port, result.Logs);
+            apiProcess = _helperFacade.StartApi(tempDir, port, result.Logs);
 
-            bool started = await WaitForApiReadyAsync(baseUrl, ct);
+            bool started = await _helperFacade.WaitForApiReadyAsync(baseUrl, ct);
             if (!started)
             {
                 result.Status = "StartupTimeout";
@@ -89,10 +93,10 @@ public class GradingService
             }
             result.Logs.Add($"API responding on {baseUrl}");
 
-            // ── 6. Discover actual routes via Swagger ───────────────────────────
-            var routeMap = await DiscoverRoutesAsync(baseUrl, result.Logs);
+            // Thử nghiệm route discovery để tìm ra các endpoint thực tế trên API của sinh viên
+            var routeMap = await _helperFacade.DiscoverRoutesAsync(baseUrl, result.Logs);
 
-            // ── 7. Run tests ────────────────────────────────────────────────────
+            // Chay qua từng test case, sử dụng routeMap để resolve đường dẫn chính xác, và tính điểm
             var outcomes = await ExecuteApiTestsAsync(baseUrl, result.Logs, routeMap);
             result.Score = outcomes.Where(o => o.Passed).Sum(o => o.Points);
             result.Logs.AddRange(outcomes.Select(o => $"{o.Name,-32} {(o.Passed ? "PASS" : "FAIL"),-6} {o.Points,3} pts  {o.Message ?? ""}"));
@@ -103,18 +107,18 @@ public class GradingService
         {
             result.Status = "Exception";
             result.Logs.Add($"CRITICAL: {ex.GetType().Name}: {ex.Message}");
-            _logger.LogError(ex, "Grading crashed for {StudentId}", req.StudentId);
+            _logger.LogError(ex, "Grading crashed for {StudentId}");
         }
         finally
         {
-            // Cleanup ────────────────────────────────────────────────────────────
+            // Dọn sạch database và process sau khi xong
             if (apiProcess is { HasExited: false })
             {
                 try { apiProcess.Kill(true); } catch { }
                 result.Logs.Add("API process terminated");
             }
 
-            if (dbName != null) await TryDropDatabaseAsync(dbName);
+            if (dbName != null) await _helperFacade.TryDropDatabaseAsync(dbName);
             if (tempDir != null && Directory.Exists(tempDir))
             {
                 try { Directory.Delete(tempDir, true); }
@@ -142,7 +146,8 @@ public class GradingService
     //  Helpers
     // ────────────────────────────────────────────────────────────────────────────
 
-    private static void CopyDirectory(string source, string target)
+    //private static - done
+    public void CopyDirectory(string source, string target)
     {
         var excludedDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -173,7 +178,8 @@ public class GradingService
         }
     }
 
-    private async Task CreateDatabaseAsync(string dbName)
+    //private - done
+    public async Task CreateDatabaseAsync(string dbName)
     {
         using var conn = new SqlConnection(_masterConnStr);
         await conn.OpenAsync();
@@ -181,7 +187,8 @@ public class GradingService
         await cmd.ExecuteNonQueryAsync();
     }
 
-    private async Task TryDropDatabaseAsync(string dbName)
+    //private - done
+    public async Task TryDropDatabaseAsync(string dbName)
     {
         try
         {
@@ -197,7 +204,8 @@ public class GradingService
         catch { /* best effort */ }
     }
 
-    private async Task ApplySchemaAsync(string dbName)
+    //private - done
+    public async Task ApplySchemaAsync(string dbName)
     {
         var psi = new ProcessStartInfo
         {
@@ -217,10 +225,12 @@ public class GradingService
             throw new Exception($"sqlcmd failed (exit {p.ExitCode}): {err}");
     }
 
-    private string BuildStudentConnectionString(string dbName) =>
+    //private - done
+    public string BuildStudentConnectionString(string dbName) =>
         $"Data Source=DESKTOP-H9I435N\\SQLEXPRESS;Initial Catalog={dbName};User ID=sa;Password=1;TrustServerCertificate=true;";
 
-    private async Task PatchConnectionStringAsync(string projectDir, string connStr)
+    //private - done
+    public async Task PatchConnectionStringAsync(string projectDir, string connStr)
     {
         // ── Patch every appsettings*.json found in project ────────────────────
         var appSettingsFiles = Directory.GetFiles(projectDir, "appsettings*.json", SearchOption.AllDirectories);
@@ -283,7 +293,8 @@ public class GradingService
         await PatchHardcodedDbContextAsync(projectDir, connStr);
     }
 
-    private static async Task PatchHardcodedDbContextAsync(string projectDir, string connStr)
+    //private static - done
+    public async Task PatchHardcodedDbContextAsync(string projectDir, string connStr)
     {
         var csFiles = Directory.GetFiles(projectDir, "*Context.cs", SearchOption.AllDirectories)
                                .Concat(Directory.GetFiles(projectDir, "*DBContext.cs", SearchOption.AllDirectories))
@@ -325,7 +336,8 @@ public class GradingService
         }
     }
 
-    private async Task<bool> BuildAsync(string dir, List<string> logs)
+    //private - done
+    public async Task<bool> BuildAsync(string dir, List<string> logs)
     {
         var psi = new ProcessStartInfo
         {
@@ -348,7 +360,8 @@ public class GradingService
         return p.ExitCode == 0;
     }
 
-    private Process StartApi(string dir, int port, List<string> logs)
+    //private - done
+    public Process StartApi(string dir, int port, List<string> logs)
     {
         var apiProject = Directory
             .GetFiles(dir, "*.csproj", SearchOption.AllDirectories)
@@ -382,10 +395,12 @@ public class GradingService
         return p;
     }
 
-    private static readonly string[] _readinessProbePaths =
+    //private static
+    public readonly string[] _readinessProbePaths =
         { "/api/LeopardProfile", "/api/Leopard", "/swagger/v1/swagger.json", "/" };
 
-    private async Task<bool> WaitForApiReadyAsync(string baseUrl, CancellationToken ct, int timeoutSec = 30)
+    //private
+    public async Task<bool> WaitForApiReadyAsync(string baseUrl, CancellationToken ct, int timeoutSec = 30)
     {
         using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
         var sw = Stopwatch.StartNew();
@@ -411,12 +426,15 @@ public class GradingService
     }
 
     // ── Per-run token cache ───────────────────────────────────────────────────
-    private readonly Dictionary<string, string?> _tokenCache = new();
+    //private
+    public readonly Dictionary<string, string?> _tokenCache = new();
 
     // Try multiple common auth endpoint paths students might use
-    private static readonly string[] _authPaths = { "/api/auth", "/api/login", "/api/account/login", "/api/accounts/login", "/api/authenticate" };
+    //private static
+    public readonly string[] _authPaths = { "/api/auth", "/api/login", "/api/account/login", "/api/accounts/login", "/api/authenticate" };
 
-    private static string? FindTokenInElement(JsonElement element)
+    //private static - done
+    public string? FindTokenInElement(JsonElement element)
     {
         if (element.ValueKind != JsonValueKind.Object) return null;
         foreach (var prop in element.EnumerateObject())
@@ -438,7 +456,8 @@ public class GradingService
         return null;
     }
 
-    private async Task<string?> FetchTokenAsync(string baseUrl, string email, string password, List<string> logs, RouteMap? routes = null)
+    //private - done
+    public async Task<string?> FetchTokenAsync(string baseUrl, string email, string password, List<string> logs, RouteMap? routes = null)
     {
         if (_tokenCache.TryGetValue(email, out var cached))
         {
@@ -489,10 +508,11 @@ public class GradingService
         return null;
     }
 
-    private async Task<List<TestOutcome>> ExecuteApiTestsAsync(string baseUrl, List<string> gradingLogs, RouteMap routes)
+    //private
+    public async Task<List<TestOutcome>> ExecuteApiTestsAsync(string baseUrl, List<string> gradingLogs, RouteMap routes)
     {
         _tokenCache.Clear();
-        var tests = GetTestSuite();
+        var tests = _helperFacade.GetTestSuite();
         var outcomes = new List<TestOutcome>();
         using var client = new HttpClient { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromSeconds(6) };
 
@@ -509,7 +529,7 @@ public class GradingService
                 // Attach bearer token when credentials are provided
                 if (!string.IsNullOrEmpty(t.BearerTokenEmail))
                 {
-                    var token = await FetchTokenAsync(baseUrl, t.BearerTokenEmail, t.BearerTokenPassword ?? "@1", gradingLogs, routes);
+                    var token = await _helperFacade.FetchTokenAsync(baseUrl, t.BearerTokenEmail, t.BearerTokenPassword ?? "@1", gradingLogs, routes);
                     if (token != null)
                         msg.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
                     else
@@ -634,7 +654,8 @@ public class GradingService
         }
     }
 
-    private async Task<RouteMap> DiscoverRoutesAsync(string baseUrl, List<string> logs)
+    //private - done
+    public async Task<RouteMap> DiscoverRoutesAsync(string baseUrl, List<string> logs)
     {
         var map = new RouteMap();
         using var client = new HttpClient { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromSeconds(5) };
@@ -702,7 +723,8 @@ public class GradingService
         return map;
     }
 
-    private List<ApiTestCase> GetTestSuite() => new()
+    //private - done
+    public List<ApiTestCase> GetTestSuite() => new()
 {
     // ── 1. Authentication  (~1.54 pts total) ──────────────────────────
 
@@ -947,7 +969,8 @@ public class GradingService
     },
 };
 
-    private static int GetFreePort(int start = 5100, int end = 5200)
+    //private static
+    public int GetFreePort(int start = 5100, int end = 5200)
     {
         for (int port = start; port <= end; port++)
         {
@@ -963,7 +986,8 @@ public class GradingService
         throw new Exception($"No free port found in range {start}-{end}");
     }
 
-    private async Task SaveResultAsync(GradingResult r)
+    //private
+    public async Task SaveResultAsync(GradingResult r)
     {
         // Map to your EF entity
         var entity = new GradingResult
@@ -981,7 +1005,6 @@ public class GradingService
 
     public class GradingResultHere
     {
-        public int StudentId { get; set; }
         public string ProjectFolder { get; set; } = null!;
         public string Status { get; set; } = null!;
         public int Score { get; set; }
