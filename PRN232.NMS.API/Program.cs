@@ -13,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IModelStateCheck, ModelStateCheck>();
 builder.Services.AddScoped<GradingService>();
 builder.Services.AddScoped<ExecuteTestService>();
+builder.Services.AddScoped<FolderService>();
 builder.Services.AddDbContext<Prn232lab3Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddControllers();
