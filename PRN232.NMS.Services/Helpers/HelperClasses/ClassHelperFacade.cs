@@ -102,5 +102,9 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
         {
             return _getFreePortHelper.GetFreePort(start, end);
         }
+        public void ClearTokenCache()
+        {
+            _tokenHelper._tokenCache.Clear();
+        }
     }
 }

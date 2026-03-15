@@ -17,19 +17,22 @@ public class GradingService
     private readonly IClassHelperFacade _helperFacade;
     private readonly ExecuteTestService _executeTestService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly FolderService _folderService;
 
     public GradingService(
         ILogger<GradingService> logger,
         IConfiguration config,
         IClassHelperFacade helperFacade,
         ExecuteTestService executeTestService,
-        IUnitOfWork unitOfWork
+        IUnitOfWork unitOfWork,
+        FolderService folderService
         )
     {
         _logger = logger;
         _helperFacade = helperFacade;
         _executeTestService = executeTestService;
         _unitOfWork = unitOfWork;
+        _folderService = folderService;
     }
 
     // Service cham diem chinh, tra ve chi tiet ket qua de hien thi tren UI, va luu vao database
@@ -139,10 +142,10 @@ public class GradingService
 
 
 
-    // Service chấm điểm tất cả submission
-    public async Task<GradingResultWithListLogs> GradeAllAsync(CancellationToken ct = default)
+     //Service chấm điểm tất cả submission
+    public async Task<GradingAllResult> GradeAllAsync(CancellationToken ct = default)
     {
-        var overallResult = new GradingResultWithListLogs
+        var overallResult = new GradingAllResult
         {
             ProjectFolder = "ALL_SUBMISSIONS",
             Logs = new List<string> { $"Started grading ALL submissions at {DateTimeOffset.Now:HH:mm:ss}" }
@@ -190,7 +193,6 @@ public class GradingService
                     perResult.Status = "BuildFailed";
                     perResult.Score = 0;
                     logs.Add("Build failed");
-                    // continue is OK → finally still runs and saves
                 }
                 else
                 {
@@ -204,7 +206,6 @@ public class GradingService
                         perResult.Status = "StartupTimeout";
                         perResult.Score = 0;
                         logs.Add("Startup timeout - API did not respond");
-                        // continue is OK → finally still runs and saves
                     }
                     else
                     {
@@ -250,8 +251,10 @@ public class GradingService
                 submission.Score = perResult.Score;
                 submission.Logs = string.Join("\n", logs);
 
-                
+
                 await _unitOfWork.GradingResultRepository.UpdateAsync(submission);
+
+                _helperFacade.ClearTokenCache();
             }
         }
 

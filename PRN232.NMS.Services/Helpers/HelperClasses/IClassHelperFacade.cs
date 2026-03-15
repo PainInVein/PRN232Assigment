@@ -18,5 +18,6 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
         public Task<RouteMap> DiscoverRoutesAsync(string baseUrl, List<string> logs);
         public List<ApiTestCase> GetTestSuite();
         public int GetFreePort(int start = 5100, int end = 5200);
+        void ClearTokenCache();
     }
 }

@@ -85,5 +85,10 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
             _tokenCache[email] = null;
             return null;
         }
+
+        public void ClearTokenCache()
+        {
+            _tokenCache.Clear();   
+        }
     }
 }
