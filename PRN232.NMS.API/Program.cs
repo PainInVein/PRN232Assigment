@@ -6,6 +6,7 @@ using PRN232.NMS.API.Models.RequestModels;
 using PRN232.NMS.Repo.DBContext;
 using PRN232.NMS.Services.Helpers.HelperClasses;
 using PRN232.NMS.Services.Services;
+using Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,8 @@ builder.Services.AddScoped<TokenHelper>();
 builder.Services.AddScoped<DiscoverRoutesHelper>();
 builder.Services.AddScoped<GetTestSuiteHelper>();
 builder.Services.AddScoped<GetFreePortHelper>();
+
+builder.Services.AddScoped<IUnitOfWork ,UnitOfWork>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

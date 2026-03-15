@@ -6,6 +6,7 @@ using PRN232.NMS.Services;
 using PRN232.NMS.Services.Helpers.HelperClasses;
 using PRN232.NMS.Services.Helpers.HelperEntities;
 using PRN232.NMS.Services.Services;
+using Repositories;
 using System.Diagnostics;
 
 namespace Grader.Services;
@@ -13,22 +14,23 @@ namespace Grader.Services;
 public class GradingService
 {
     private readonly ILogger<GradingService> _logger;
-    private readonly Prn232lab3Context _graderDb;
     private readonly IClassHelperFacade _helperFacade;
     private readonly ExecuteTestService _executeTestService;
+    private readonly IUnitOfWork _unitOfWork;
 
     public GradingService(
         ILogger<GradingService> logger,
         IConfiguration config,
         Prn232lab3Context graderDb,
         IClassHelperFacade helperFacade,
-        ExecuteTestService executeTestService
+        ExecuteTestService executeTestService,
+        IUnitOfWork unitOfWork
         )
     {
         _logger = logger;
-        _graderDb = graderDb;
         _helperFacade = helperFacade;
         _executeTestService = executeTestService;
+        _unitOfWork = unitOfWork;
     }
 
     // Service cham diem chinh, tra ve chi tiet ket qua de hien thi tren UI, va luu vao database
@@ -130,26 +132,9 @@ public class GradingService
                 Score = result.Score,
                 Logs = string.Join("\n", result.Logs),
             };
-            await SaveResultAsync(mappedResult);
+            await _unitOfWork.GradingResultRepository.CreateAsync(mappedResult);
         }
 
         return result;
-    }
-
-    //private
-    public async Task SaveResultAsync(GradingResult r)
-    {
-        // Map to your EF entity
-        var entity = new GradingResult
-        {
-            StudentId = r.StudentId,
-            ProjectFolder = r.ProjectFolder,
-            Status = r.Status,
-            Score = r.Score,
-            Logs = string.Join("\n", r.Logs),
-        };
-
-        _graderDb.GradingResults.Add(entity);
-        await _graderDb.SaveChangesAsync();
     }
 }

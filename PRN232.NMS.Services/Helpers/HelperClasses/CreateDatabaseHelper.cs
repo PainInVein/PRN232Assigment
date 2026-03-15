@@ -9,7 +9,7 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
 {
     public class CreateDatabaseHelper
     {
-        private readonly string _masterConnStr = "Server=DESKTOP-OEQ9HFB\\SQLEXPRESS;User Id=sa;Password=12345;TrustServerCertificate=true;";
+        private readonly string _masterConnStr = "Server=DESKTOP-H9I435N\\SQLEXPRESS;User Id=sa;Password=1;TrustServerCertificate=true;";
         public async Task CreateDatabaseAsync(string dbName)
         {
             using var conn = new SqlConnection(_masterConnStr);
