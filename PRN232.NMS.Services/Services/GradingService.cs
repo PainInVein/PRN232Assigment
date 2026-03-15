@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using PRN232.NMS.Repo.DBContext;
 using PRN232.NMS.Repo.Entities;
 using PRN232.NMS.Services;
@@ -8,6 +9,7 @@ using PRN232.NMS.Services.Helpers.HelperEntities;
 using PRN232.NMS.Services.Services;
 using Repositories;
 using System.Diagnostics;
+using System.Runtime;
 
 namespace Grader.Services;
 
@@ -17,7 +19,8 @@ public class GradingService
     private readonly IClassHelperFacade _helperFacade;
     private readonly ExecuteTestService _executeTestService;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly FolderService _folderService;
+    private readonly DatabaseSettings _dbSettings;
+
 
     public GradingService(
         ILogger<GradingService> logger,
@@ -25,14 +28,14 @@ public class GradingService
         IClassHelperFacade helperFacade,
         ExecuteTestService executeTestService,
         IUnitOfWork unitOfWork,
-        FolderService folderService
+        IOptions<DatabaseSettings> dbSettings
         )
     {
         _logger = logger;
         _helperFacade = helperFacade;
         _executeTestService = executeTestService;
         _unitOfWork = unitOfWork;
-        _folderService = folderService;
+        _dbSettings = dbSettings.Value;
     }
 
     // Service cham diem chinh, tra ve chi tiet ket qua de hien thi tren UI, va luu vao database
@@ -51,7 +54,7 @@ public class GradingService
         try
         {
             // Chỗ này copy project submission vào temp folder
-            var baseTempFolder = @"C:\Users\Admin\Desktop\PRNGrading";
+            var baseTempFolder = _dbSettings.BaseTempFolder;
             tempDir = Path.Combine(baseTempFolder, $"grade-{Guid.NewGuid():N}");
             Directory.CreateDirectory(tempDir);
             _helperFacade.CopyDirectory(req.ProjectFolder, tempDir);
@@ -60,11 +63,11 @@ public class GradingService
             // Chỗ này tạo database tạm thời cho sinh viên
             var guidPart = Guid.NewGuid().ToString("N")[..8];
             dbName = $"Grade_{DateTime.UtcNow:yyyyMMddHHmmss}_{guidPart}";
-            await _helperFacade.CreateDatabaseAsync(dbName);
+            await _helperFacade.CreateDatabaseAsync(dbName, _dbSettings.MasterConnectionString);
             result.Logs.Add($"Database {dbName} created");
 
-            var studentConnStr = _helperFacade.BuildStudentConnectionString(dbName);
-            await _helperFacade.ApplySchemaAsync(dbName);
+            var studentConnStr = _helperFacade.BuildStudentConnectionString(dbName, _dbSettings.UserId, _dbSettings.Password, _dbSettings.ServerName);
+            await _helperFacade.ApplySchemaAsync(dbName, _dbSettings.SchemaPath, _dbSettings.UserId, _dbSettings.Password, _dbSettings.ServerName);
             result.Logs.Add("Schema applied");
 
             // Chỉnh sửa connection string trong project để trỏ vào database mới tạo
@@ -118,7 +121,7 @@ public class GradingService
                 result.Logs.Add("API process terminated");
             }
 
-            if (dbName != null) await _helperFacade.TryDropDatabaseAsync(dbName);
+            if (dbName != null) await _helperFacade.TryDropDatabaseAsync(dbName, _dbSettings.MasterConnectionString);
             if (tempDir != null && Directory.Exists(tempDir))
             {
                 try { Directory.Delete(tempDir, true); }
@@ -168,7 +171,7 @@ public class GradingService
 
             try
             {
-                var baseTempFolder = @"C:\Users\Admin\Desktop\PRNGrading";
+                var baseTempFolder = _dbSettings.BaseTempFolder;
                 tempDir = Path.Combine(baseTempFolder, $"grade-{Guid.NewGuid():N}");
                 Directory.CreateDirectory(tempDir);
 
@@ -177,11 +180,11 @@ public class GradingService
 
                 var guidPart = Guid.NewGuid().ToString("N")[..8];
                 dbName = $"Grade_{DateTime.UtcNow:yyyyMMddHHmmss}_{guidPart}";
-                await _helperFacade.CreateDatabaseAsync(dbName);
+                await _helperFacade.CreateDatabaseAsync(dbName, _dbSettings.MasterConnectionString);
                 logs.Add($"Database {dbName} created");
 
-                var studentConnStr = _helperFacade.BuildStudentConnectionString(dbName);
-                await _helperFacade.ApplySchemaAsync(dbName);
+                var studentConnStr = _helperFacade.BuildStudentConnectionString(dbName, _dbSettings.UserId, _dbSettings.Password, _dbSettings.ServerName);
+                await _helperFacade.ApplySchemaAsync(dbName, _dbSettings.SchemaPath, _dbSettings.UserId, _dbSettings.Password, _dbSettings.ServerName);
                 logs.Add("Schema applied");
 
                 await _helperFacade.PatchConnectionStringAsync(tempDir, studentConnStr);
@@ -236,7 +239,7 @@ public class GradingService
                     logs.Add("API process terminated");
                 }
                 if (dbName != null)
-                    await _helperFacade.TryDropDatabaseAsync(dbName);
+                    await _helperFacade.TryDropDatabaseAsync(dbName, _dbSettings.MasterConnectionString);
 
                 if (tempDir != null && Directory.Exists(tempDir))
                 {

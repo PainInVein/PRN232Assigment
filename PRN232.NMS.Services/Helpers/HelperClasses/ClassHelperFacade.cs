@@ -52,27 +52,27 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
             _copyHelper.CopyDirectory(source, target);
         }
 
-        public async Task CreateDatabaseAsync(string dbName)
+        public async Task CreateDatabaseAsync(string dbName, string masterConnStr)
         {
-            await _createDbHelper.CreateDatabaseAsync(dbName);
+            await _createDbHelper.CreateDatabaseAsync(dbName, masterConnStr);
         }
 
-        public async Task TryDropDatabaseAsync(string dbName)
+        public async Task TryDropDatabaseAsync(string dbName, string masterConnStr)
         {
-            await _tryDropDbHelper.TryDropDatabaseAsync(dbName);
+            await _tryDropDbHelper.TryDropDatabaseAsync(dbName, masterConnStr);
         }
 
-        public async Task ApplySchemaAsync(string dbName)
+        public async Task ApplySchemaAsync(string dbName, string schemaPath, string username, string password, string serverName)
         {
-            await _applySchemaHelper.ApplySchemaAsync(dbName);
+            await _applySchemaHelper.ApplySchemaAsync(dbName, schemaPath, username, password, serverName);
         }
         public async Task PatchConnectionStringAsync(string projectDir, string connStr)
         {
             await _connStrHelper.PatchConnectionStringAsync(projectDir, connStr);
         }
-        public string BuildStudentConnectionString(string dbName)
+        public string BuildStudentConnectionString(string dbName, string username, string password, string serverName)
         {
-            return _connStrHelper.BuildStudentConnectionString(dbName);
+            return _connStrHelper.BuildStudentConnectionString(dbName, username, password, serverName);
         }
         public async Task<bool> BuildAsync(string dir, List<string> logs)
         {

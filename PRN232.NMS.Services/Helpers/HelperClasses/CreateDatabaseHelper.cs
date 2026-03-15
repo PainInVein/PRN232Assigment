@@ -9,10 +9,9 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
 {
     public class CreateDatabaseHelper
     {
-        private readonly string _masterConnStr = "Server=DESKTOP-H9I435N\\SQLEXPRESS;User Id=sa;Password=1;TrustServerCertificate=true;";
-        public async Task CreateDatabaseAsync(string dbName)
+        public async Task CreateDatabaseAsync(string dbName, string masterConnStr)
         {
-            using var conn = new SqlConnection(_masterConnStr);
+            using var conn = new SqlConnection(masterConnStr);
             await conn.OpenAsync();
             using var cmd = new SqlCommand($"CREATE DATABASE [{dbName}]", conn);
             await cmd.ExecuteNonQueryAsync();

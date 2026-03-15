@@ -5,12 +5,12 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
     public class ApplySchemaHelper
     {
         private readonly string _schemaPath = @"C:\Users\Admin\Desktop\PRNGrading\SU25LeopardDB.sql";
-        public async Task ApplySchemaAsync(string dbName)
+        public async Task ApplySchemaAsync(string dbName, string schemaPath, string username, string password, string serverName)
         {
             var psi = new ProcessStartInfo
             {
                 FileName = "sqlcmd",
-                Arguments = $@"-S DESKTOP-H9I435N\SQLEXPRESS -U sa -P 1 -d {dbName} -i ""{_schemaPath}""",
+                Arguments = $@"-S {serverName} -U {username} -P {password} -d {dbName} -i ""{schemaPath}""",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,

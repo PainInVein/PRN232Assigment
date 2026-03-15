@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,13 +10,11 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
 {
     public class TryDropDatabaseHelper
     {
-        private readonly string _masterConnStr = "Server=DESKTOP-H9I435N\\SQLEXPRESS;User Id=sa;Password=1;TrustServerCertificate=true;";
-
-        public async Task TryDropDatabaseAsync(string dbName)
+        public async Task TryDropDatabaseAsync(string dbName, string masterConnStr)
         {
             try
             {
-                using var conn = new SqlConnection(_masterConnStr);
+                using var conn = new SqlConnection(masterConnStr);
                 await conn.OpenAsync();
                 using var cmd = new SqlCommand(
                     $"""

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using PRN232.NMS.API.Models.MappingTool;
 using PRN232.NMS.API.Models.RequestModels;
 using PRN232.NMS.Repo.DBContext;
+using PRN232.NMS.Services;
 using PRN232.NMS.Services.Helpers.HelperClasses;
 using PRN232.NMS.Services.Services;
 using Repositories;
@@ -34,6 +35,9 @@ builder.Services.AddScoped<GetTestSuiteHelper>();
 builder.Services.AddScoped<GetFreePortHelper>();
 
 builder.Services.AddScoped<IUnitOfWork ,UnitOfWork>();
+
+builder.Services.Configure<DatabaseSettings>(
+    builder.Configuration.GetSection("Database"));
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

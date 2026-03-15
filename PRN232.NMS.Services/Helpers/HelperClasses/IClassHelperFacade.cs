@@ -6,11 +6,11 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
     public interface IClassHelperFacade
     {
         public void CopyDirectory(string source, string target);
-        public Task CreateDatabaseAsync(string dbName);
-        public Task TryDropDatabaseAsync(string dbName);
-        public Task ApplySchemaAsync(string dbName);
+        public Task CreateDatabaseAsync(string dbName, string masterConnStr);
+        public Task TryDropDatabaseAsync(string dbName, string masterConnStr);
+        public Task ApplySchemaAsync(string dbName, string schemaPath, string username, string password, string serverName);
         public Task PatchConnectionStringAsync(string projectDir, string connStr);
-        public string BuildStudentConnectionString(string dbName);
+        public string BuildStudentConnectionString(string dbName, string username, string password, string serverName);
         public Task<bool> BuildAsync(string dir, List<string> logs);
         public Process StartApi(string dir, int port, List<string> logs);
         public Task<bool> WaitForApiReadyAsync(string baseUrl, CancellationToken ct, int timeoutSec = 30);
