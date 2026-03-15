@@ -40,7 +40,6 @@ public class GradingService
             Logs = new List<string> { $"Started grading at {DateTimeOffset.Now:HH:mm:ss}" }
         };
 
-
         string? tempDir = null;
         string? dbName = null;
         Process? apiProcess = null;
