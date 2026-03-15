@@ -12,10 +12,17 @@ namespace PRN232.NMS.API.Controllers
 
         public GradingController(GradingService grader) => _grader = grader;
 
-        [HttpPost]
+        [HttpPost("single-directory")]
         public async Task<IActionResult> Grade([FromBody] GradingRequest req)
         {
             var result = await _grader.GradeAsync(req);
+            return Ok(result);
+        }
+
+        [HttpPost("all-directory")]
+        public async Task<IActionResult> GradeAllAsync()
+        {
+            var result = await _grader.GradeAllAsync();
             return Ok(result);
         }
     }

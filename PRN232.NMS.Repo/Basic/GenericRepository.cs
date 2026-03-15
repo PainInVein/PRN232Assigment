@@ -128,6 +128,12 @@ namespace PRN232.NMS.Repo.Basic
             return await _context.SaveChangesAsync();
         }
 
+        public async Task<int> CreateRangeAsync(List<T> entities)
+        {
+            _context.AddRange(entities);
+            return await _context.SaveChangesAsync();
+        }
+
         #endregion Separating asign entity and save operators
     }
 }

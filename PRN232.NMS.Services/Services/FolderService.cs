@@ -1,10 +1,24 @@
-﻿namespace PRN232.NMS.Services.Services
+﻿using PRN232.NMS.Repo.Entities;
+using Repositories;
+using System.Threading.Tasks;
+
+namespace PRN232.NMS.Services.Services
 {
     public class FolderService
     {
-        public List<SubfolderInfo> GetSubfolders(string projectFolder)
+
+        private readonly IUnitOfWork _unitOfWork;
+
+        public FolderService(IUnitOfWork unitOfWork)
         {
+            _unitOfWork = unitOfWork;
+        }
+
+        public async Task<List<SubfolderInfo>> GetSubfolders(string projectFolder)
+        {
+
             var result = new List<SubfolderInfo>();
+            var submissionData = new List<GradingResult>();
 
             try
             {
@@ -39,6 +53,15 @@
                         FolderName = dirInfo.Name,
                         Path = dirInfo.FullName
                     });
+                    submissionData.Add(new GradingResult
+                    {
+                        StudentName = dirInfo.Name,
+                        ProjectFolder = dirInfo.FullName,
+                        Score = 0,
+                        Logs = null,
+                        Points = 0,
+                        Status = "Pending"
+                    });
                 }
             }
             catch (UnauthorizedAccessException ex)
@@ -57,6 +80,8 @@
             {
                 throw new InvalidOperationException($"An error occurred while reading subfolders from '{projectFolder}': {ex.Message}", ex);
             }
+
+            await _unitOfWork.GradingResultRepository.CreateRangeAsync(submissionData);
 
             return result;
         }

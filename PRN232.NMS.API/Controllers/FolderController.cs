@@ -16,7 +16,7 @@ namespace PRN232.NMS.API.Controllers
         }
 
         [HttpPost("get-folders")]
-        public IActionResult GetFolders([FromBody] GetSubfoldersRequest request)
+        public async Task<IActionResult> GetFolders([FromBody] GetSubfoldersRequest request)
         {
             try
             {
@@ -25,7 +25,7 @@ namespace PRN232.NMS.API.Controllers
                     return BadRequest(new { error = "ProjectFolder is required and cannot be empty." });
                 }
 
-                var subfolders = _folderService.GetSubfolders(request.ProjectFolder);
+                var subfolders = await _folderService.GetSubfolders(request.ProjectFolder);
 
                 return Ok(subfolders);
             }

@@ -21,7 +21,6 @@ public class GradingService
     public GradingService(
         ILogger<GradingService> logger,
         IConfiguration config,
-        Prn232lab3Context graderDb,
         IClassHelperFacade helperFacade,
         ExecuteTestService executeTestService,
         IUnitOfWork unitOfWork
@@ -136,5 +135,128 @@ public class GradingService
         }
 
         return result;
+    }
+
+
+
+    // Service chấm điểm tất cả submission
+    public async Task<GradingResultWithListLogs> GradeAllAsync(CancellationToken ct = default)
+    {
+        var overallResult = new GradingResultWithListLogs
+        {
+            ProjectFolder = "ALL_SUBMISSIONS",
+            Logs = new List<string> { $"Started grading ALL submissions at {DateTimeOffset.Now:HH:mm:ss}" }
+        };
+
+        List<GradingResult> allSubmissions = await _unitOfWork.GradingResultRepository.GetAllAsync();
+
+        foreach (var submission in allSubmissions)
+        {
+            string? tempDir = null;
+            string? dbName = null;
+            Process? apiProcess = null;
+
+            var logs = new List<string> { $"Started grading {submission.ProjectFolder} at {DateTimeOffset.Now:HH:mm:ss}" };
+            var perResult = new GradingResultWithListLogs
+            {
+                ProjectFolder = submission.ProjectFolder,
+                Logs = logs
+            };
+
+            try
+            {
+                var baseTempFolder = @"C:\Users\Admin\Desktop\PRNGrading";
+                tempDir = Path.Combine(baseTempFolder, $"grade-{Guid.NewGuid():N}");
+                Directory.CreateDirectory(tempDir);
+
+                _helperFacade.CopyDirectory(submission.ProjectFolder, tempDir);
+                logs.Add("Project copied to temporary folder");
+
+                var guidPart = Guid.NewGuid().ToString("N")[..8];
+                dbName = $"Grade_{DateTime.UtcNow:yyyyMMddHHmmss}_{guidPart}";
+                await _helperFacade.CreateDatabaseAsync(dbName);
+                logs.Add($"Database {dbName} created");
+
+                var studentConnStr = _helperFacade.BuildStudentConnectionString(dbName);
+                await _helperFacade.ApplySchemaAsync(dbName);
+                logs.Add("Schema applied");
+
+                await _helperFacade.PatchConnectionStringAsync(tempDir, studentConnStr);
+                logs.Add("Connection string updated");
+
+                bool buildOk = await _helperFacade.BuildAsync(tempDir, logs);
+                if (!buildOk)
+                {
+                    perResult.Status = "BuildFailed";
+                    perResult.Score = 0;
+                    logs.Add("Build failed");
+                    // continue is OK → finally still runs and saves
+                }
+                else
+                {
+                    int port = _helperFacade.GetFreePort(5100, 5200);
+                    string baseUrl = $"http://localhost:{port}";
+                    apiProcess = _helperFacade.StartApi(tempDir, port, logs);
+
+                    bool started = await _helperFacade.WaitForApiReadyAsync(baseUrl, ct);
+                    if (!started)
+                    {
+                        perResult.Status = "StartupTimeout";
+                        perResult.Score = 0;
+                        logs.Add("Startup timeout - API did not respond");
+                        // continue is OK → finally still runs and saves
+                    }
+                    else
+                    {
+                        logs.Add($"API responding on {baseUrl}");
+
+                        var routeMap = await _helperFacade.DiscoverRoutesAsync(baseUrl, logs);
+                        var outcomes = await _executeTestService.ExecuteApiTestsAsync(baseUrl, logs, routeMap);
+
+                        perResult.Score = outcomes.Where(o => o.Passed).Sum(o => o.Points);
+                        logs.AddRange(outcomes.Select(o => $"{o.Name,-32} {(o.Passed ? "PASS" : "FAIL"),-6} {o.Points,3} pts {o.Message ?? ""}"));
+                        perResult.Status = perResult.Score >= 5 ? "Passed" : "Failed";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                perResult.Status = "Exception";
+                perResult.Score = 0;
+                logs.Add($"CRITICAL: {ex.GetType().Name}: {ex.Message}");
+                _logger.LogError(ex, $"Grading crashed for submission {submission.ProjectFolder}");
+            }
+            finally
+            {
+                // Cleanup
+                if (apiProcess is { HasExited: false })
+                {
+                    try { apiProcess.Kill(true); } catch { }
+                    logs.Add("API process terminated");
+                }
+                if (dbName != null)
+                    await _helperFacade.TryDropDatabaseAsync(dbName);
+
+                if (tempDir != null && Directory.Exists(tempDir))
+                {
+                    try { Directory.Delete(tempDir, true); }
+                    catch { logs.Add("Warning: could not delete temp folder"); }
+                }
+
+                perResult.FinishedAt = DateTime.UtcNow;
+
+                // Update entity
+                submission.Status = perResult.Status ?? "Unknown";
+                submission.Score = perResult.Score;
+                submission.Logs = string.Join("\n", logs);
+
+                
+                await _unitOfWork.GradingResultRepository.UpdateAsync(submission);
+            }
+        }
+
+        overallResult.Logs.Add($"Finished grading {allSubmissions.Count} submissions at {DateTimeOffset.Now:HH:mm:ss}");
+        overallResult.Status = "AllProcessed";
+        return overallResult;
     }
 }
