@@ -8,7 +8,7 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
         public void CopyDirectory(string source, string target);
         public Task CreateDatabaseAsync(string dbName, string masterConnStr);
         public Task TryDropDatabaseAsync(string dbName, string masterConnStr);
-        public Task ApplySchemaAsync(string dbName, string schemaPath, string username, string password, string serverName);
+        public Task ApplySchemaAsync(string dbName, string schemaPath, string studentConnStr);
         public Task PatchConnectionStringAsync(string projectDir, string connStr);
         public string BuildStudentConnectionString(string dbName, string username, string password, string serverName);
         public Task<bool> BuildAsync(string dir, List<string> logs);

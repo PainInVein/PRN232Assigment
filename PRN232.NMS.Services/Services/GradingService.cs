@@ -67,7 +67,7 @@ public class GradingService
             result.Logs.Add($"Database {dbName} created");
 
             var studentConnStr = _helperFacade.BuildStudentConnectionString(dbName, _dbSettings.UserId, _dbSettings.Password, _dbSettings.ServerName);
-            await _helperFacade.ApplySchemaAsync(dbName, _dbSettings.SchemaPath, _dbSettings.UserId, _dbSettings.Password, _dbSettings.ServerName);
+            await _helperFacade.ApplySchemaAsync(dbName, _dbSettings.SchemaPath, studentConnStr);
             result.Logs.Add("Schema applied");
 
             // Chỉnh sửa connection string trong project để trỏ vào database mới tạo
@@ -184,7 +184,7 @@ public class GradingService
                 logs.Add($"Database {dbName} created");
 
                 var studentConnStr = _helperFacade.BuildStudentConnectionString(dbName, _dbSettings.UserId, _dbSettings.Password, _dbSettings.ServerName);
-                await _helperFacade.ApplySchemaAsync(dbName, _dbSettings.SchemaPath, _dbSettings.UserId, _dbSettings.Password, _dbSettings.ServerName);
+                await _helperFacade.ApplySchemaAsync(dbName, _dbSettings.SchemaPath, studentConnStr);
                 logs.Add("Schema applied");
 
                 await _helperFacade.PatchConnectionStringAsync(tempDir, studentConnStr);

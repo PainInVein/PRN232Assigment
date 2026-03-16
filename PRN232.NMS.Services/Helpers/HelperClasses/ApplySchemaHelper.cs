@@ -1,28 +1,28 @@
-﻿using System.Diagnostics;
+﻿using Microsoft.Data.SqlClient;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace PRN232.NMS.Services.Helpers.HelperClasses
 {
     public class ApplySchemaHelper
     {
-        private readonly string _schemaPath = @"C:\Users\Admin\Desktop\PRNGrading\SU25LeopardDB.sql";
-        public async Task ApplySchemaAsync(string dbName, string schemaPath, string username, string password, string serverName)
+        public async Task ApplySchemaAsync(string dbName, string schemaPath, string studentConnStr)
         {
-            var psi = new ProcessStartInfo
+            var script = await File.ReadAllTextAsync(schemaPath);
+            var batches = Regex.Split(script, @"^\s*GO\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+            await using var conn = new SqlConnection(studentConnStr);
+
+            await conn.OpenAsync();
+
+            foreach (var batch in batches)
             {
-                FileName = "sqlcmd",
-                Arguments = $@"-S {serverName} -U {username} -P {password} -d {dbName} -i ""{schemaPath}""",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
+                var trimmed = batch.Trim();
+                if (string.IsNullOrWhiteSpace(trimmed)) continue;
 
-            using var p = Process.Start(psi)!;
-            string err = await p.StandardError.ReadToEndAsync();
-            await p.WaitForExitAsync();
-
-            if (p.ExitCode != 0)
-                throw new Exception($"sqlcmd failed (exit {p.ExitCode}): {err}");
+                await using var cmd = new SqlCommand(trimmed, conn) { CommandTimeout = 120 };
+                await cmd.ExecuteNonQueryAsync();
+            }
         }
     }
 }

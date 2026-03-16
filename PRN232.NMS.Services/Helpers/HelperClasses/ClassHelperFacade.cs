@@ -62,9 +62,9 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
             await _tryDropDbHelper.TryDropDatabaseAsync(dbName, masterConnStr);
         }
 
-        public async Task ApplySchemaAsync(string dbName, string schemaPath, string username, string password, string serverName)
+        public async Task ApplySchemaAsync(string dbName, string schemaPath, string studentConnStr)
         {
-            await _applySchemaHelper.ApplySchemaAsync(dbName, schemaPath, username, password, serverName);
+            await _applySchemaHelper.ApplySchemaAsync(dbName, schemaPath, studentConnStr);
         }
         public async Task PatchConnectionStringAsync(string projectDir, string connStr)
         {
