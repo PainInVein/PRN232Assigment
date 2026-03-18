@@ -14,11 +14,39 @@ namespace PRN232.NMS.Services.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<List<SubfolderInfo>> GetSubfolders(string projectFolder)
+        private string ResolvePathToDockerPath(string path)
+        {
+            const string windowsPrefix = @"C:\Users\Admin\Desktop\submissions";
+            if (path.StartsWith(windowsPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return path.Replace(windowsPrefix, "/students")
+                           .Replace("\\", "/");
+            }
+
+            return path;
+        }
+
+        private string ResolvePathToWindowPath(string path)
+        {
+            const string dockerPrefix = "/students";
+            const string windowsPrefix = @"C:\Users\Admin\Desktop\submissions";
+
+            if (path.StartsWith(dockerPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return path.Replace(dockerPrefix, windowsPrefix)
+                           .Replace("/", "\\");
+            }
+
+            return path;
+        }
+
+        public async Task<List<SubfolderInfo>> GetSubfolders(string inputFolderPath)
         {
 
             var result = new List<SubfolderInfo>();
             var submissionData = new List<GradingResult>();
+
+            string projectFolder = ResolvePathToDockerPath(inputFolderPath);
 
             try
             {
@@ -51,12 +79,12 @@ namespace PRN232.NMS.Services.Services
                     result.Add(new SubfolderInfo
                     {
                         FolderName = dirInfo.Name,
-                        Path = dirInfo.FullName
+                        Path = ResolvePathToWindowPath(dirInfo.FullName)
                     });
                     submissionData.Add(new GradingResult
                     {
                         StudentName = dirInfo.Name,
-                        ProjectFolder = dirInfo.FullName,
+                        ProjectFolder = ResolvePathToWindowPath(dirInfo.FullName),
                         Score = 0,
                         Logs = null,
                         Points = 0,
