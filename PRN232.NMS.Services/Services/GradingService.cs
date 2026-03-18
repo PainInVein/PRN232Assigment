@@ -265,4 +265,9 @@ public class GradingService
         overallResult.Status = "AllProcessed";
         return overallResult;
     }
+
+    public async Task<IEnumerable<GradingResult>> GetAllGradingResultsAsync()
+    {
+        return await _unitOfWork.GradingResultRepository.GetAllAsync();
+    }
 }
