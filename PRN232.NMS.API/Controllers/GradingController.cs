@@ -1,6 +1,7 @@
-﻿using Grader.Services;
+﻿using AutoMapper;
+using Grader.Services;
 using Microsoft.AspNetCore.Mvc;
-using PRN232.NMS.API.Models.RequestModels;
+using PRN232.NMS.API.Models.ResponseModels;
 using PRN232.NMS.Services;
 
 namespace PRN232.NMS.API.Controllers
@@ -10,8 +11,13 @@ namespace PRN232.NMS.API.Controllers
     public class GradingController : ControllerBase
     {
         private readonly GradingService _grader;
+        private readonly IMapper _mapper;
 
-        public GradingController(GradingService grader) => _grader = grader;
+        public GradingController(GradingService grader, IMapper mapper)
+        {
+            _grader = grader;
+            _mapper = mapper;
+        }
 
         [HttpPost("single-directory")]
         public async Task<IActionResult> Grade([FromBody] GradingRequest req)
@@ -25,6 +31,13 @@ namespace PRN232.NMS.API.Controllers
         {
             var result = await _grader.GradeAllAsync();
             return Ok(result);
+        }
+
+        [HttpGet("All-Score")]
+        public async Task<IActionResult> GetAllScoreAsync()
+        {
+            var result = await _grader.GetAllGradingResultsAsync();
+            return Ok(_mapper.Map<IEnumerable<GradingResultDTO>>(result));
         }
     }
 }
