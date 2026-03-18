@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  grader:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - "C:/Users/Admin/Desktop/submissions:/students:ro"
+    depends_on:
+      - db
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong!Password123
+    ports:
+      - "14330:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+
+volumes:
+  mssql-data:

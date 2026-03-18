@@ -20,6 +20,7 @@ public class GradingService
     private readonly ExecuteTestService _executeTestService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly DatabaseSettings _dbSettings;
+    private readonly string _schemaPath;
 
 
     public GradingService(
@@ -36,6 +37,7 @@ public class GradingService
         _executeTestService = executeTestService;
         _unitOfWork = unitOfWork;
         _dbSettings = dbSettings.Value;
+        _schemaPath = Path.Combine(AppContext.BaseDirectory, "SU25LeopardDB.sql");
     }
 
     // Service cham diem chinh, tra ve chi tiet ket qua de hien thi tren UI, va luu vao database
@@ -54,10 +56,12 @@ public class GradingService
         try
         {
             // Chỗ này copy project submission vào temp folder
-            var baseTempFolder = _dbSettings.BaseTempFolder;
+            //var baseTempFolder = _dbSettings.BaseTempFolder; // Local
+            var resolvedProjectPath = _helperFacade.ResolveWindowsPathToContainer(req.ProjectFolder);
+            var baseTempFolder = _dbSettings.BaseTempFolder; // Docker deploy
             tempDir = Path.Combine(baseTempFolder, $"grade-{Guid.NewGuid():N}");
             Directory.CreateDirectory(tempDir);
-            _helperFacade.CopyDirectory(req.ProjectFolder, tempDir);
+            _helperFacade.CopyDirectory(resolvedProjectPath, tempDir);
             result.Logs.Add("Project copied to temporary folder");
 
             // Chỗ này tạo database tạm thời cho sinh viên
@@ -67,7 +71,8 @@ public class GradingService
             result.Logs.Add($"Database {dbName} created");
 
             var studentConnStr = _helperFacade.BuildStudentConnectionString(dbName, _dbSettings.UserId, _dbSettings.Password, _dbSettings.ServerName);
-            await _helperFacade.ApplySchemaAsync(dbName, _dbSettings.SchemaPath, studentConnStr);
+            //await _helperFacade.ApplySchemaAsync(dbName, _dbSettings.SchemaPath, studentConnStr); // Local
+            await _helperFacade.ApplySchemaAsync(dbName, _schemaPath, studentConnStr); // Docker deploy
             result.Logs.Add("Schema applied");
 
             // Chỉnh sửa connection string trong project để trỏ vào database mới tạo
@@ -171,11 +176,13 @@ public class GradingService
 
             try
             {
-                var baseTempFolder = _dbSettings.BaseTempFolder;
+                //var baseTempFolder = _dbSettings.BaseTempFolder; // Local
+                var resolvedProjectPath = _helperFacade.ResolveWindowsPathToContainer(submission.ProjectFolder);
+                var baseTempFolder = _dbSettings.BaseTempFolder; // Docker deploy
                 tempDir = Path.Combine(baseTempFolder, $"grade-{Guid.NewGuid():N}");
                 Directory.CreateDirectory(tempDir);
 
-                _helperFacade.CopyDirectory(submission.ProjectFolder, tempDir);
+                _helperFacade.CopyDirectory(resolvedProjectPath, tempDir);
                 logs.Add("Project copied to temporary folder");
 
                 var guidPart = Guid.NewGuid().ToString("N")[..8];
@@ -184,7 +191,8 @@ public class GradingService
                 logs.Add($"Database {dbName} created");
 
                 var studentConnStr = _helperFacade.BuildStudentConnectionString(dbName, _dbSettings.UserId, _dbSettings.Password, _dbSettings.ServerName);
-                await _helperFacade.ApplySchemaAsync(dbName, _dbSettings.SchemaPath, studentConnStr);
+                //await _helperFacade.ApplySchemaAsync(dbName, _dbSettings.SchemaPath, studentConnStr); // Local
+                await _helperFacade.ApplySchemaAsync(dbName, _schemaPath, studentConnStr); // Docker deploy
                 logs.Add("Schema applied");
 
                 await _helperFacade.PatchConnectionStringAsync(tempDir, studentConnStr);

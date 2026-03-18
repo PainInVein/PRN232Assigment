@@ -33,6 +33,7 @@ builder.Services.AddScoped<TokenHelper>();
 builder.Services.AddScoped<DiscoverRoutesHelper>();
 builder.Services.AddScoped<GetTestSuiteHelper>();
 builder.Services.AddScoped<GetFreePortHelper>();
+builder.Services.AddScoped<WindowsPathToContainerHelper>();
 
 builder.Services.AddScoped<IUnitOfWork ,UnitOfWork>();
 

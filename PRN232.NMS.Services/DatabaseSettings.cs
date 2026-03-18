@@ -14,5 +14,6 @@ namespace PRN232.NMS.Services
         public string SchemaPath { get; set; } = string.Empty;
         public string MasterConnectionString { get; set; } = string.Empty;
         public string BaseTempFolder { get; set; } = string.Empty;
+        public string StudentBasePath { get; set; } = string.Empty;
     }
 }

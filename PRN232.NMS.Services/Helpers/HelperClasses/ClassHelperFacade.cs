@@ -17,6 +17,7 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
         private readonly DiscoverRoutesHelper _discoverRoutesHelper;
         private readonly GetTestSuiteHelper _getTestSuiteHelper;
         private readonly GetFreePortHelper _getFreePortHelper;
+        private readonly WindowsPathToContainerHelper _windowsPathToContainerHelper;
 
         public ClassHelperFacade(
             CopyDirectoryHelper copyDirectoryHelper,
@@ -30,7 +31,8 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
             TokenHelper tokenHelper,
             DiscoverRoutesHelper discoverRoutesHelper,
             GetTestSuiteHelper getTestSuiteHelper,
-            GetFreePortHelper getFreePortHelper
+            GetFreePortHelper getFreePortHelper,
+            WindowsPathToContainerHelper windowsPathToContainerHelper
             )
         {
             _copyHelper = copyDirectoryHelper;
@@ -45,6 +47,7 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
             _discoverRoutesHelper = discoverRoutesHelper;
             _getTestSuiteHelper = getTestSuiteHelper;
             _getFreePortHelper = getFreePortHelper;
+            _windowsPathToContainerHelper = windowsPathToContainerHelper;
         }
 
         public void CopyDirectory(string source, string target)
@@ -105,6 +108,10 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
         public void ClearTokenCache()
         {
             _tokenHelper._tokenCache.Clear();
+        }
+        public string ResolveWindowsPathToContainer(string windowsPath)
+        {
+            return _windowsPathToContainerHelper.ResolveWindowsPathToContainer(windowsPath);
         }
     }
 }
