@@ -1,4 +1,5 @@
-﻿using PRN232.NMS.Repo.Entities;
+﻿using Microsoft.Extensions.Options;
+using PRN232.NMS.Repo.Entities;
 using Repositories;
 using System.Threading.Tasks;
 
@@ -8,18 +9,21 @@ namespace PRN232.NMS.Services.Services
     {
 
         private readonly IUnitOfWork _unitOfWork;
+        private readonly DatabaseSettings _dbSettings;
 
-        public FolderService(IUnitOfWork unitOfWork)
+        public FolderService(IUnitOfWork unitOfWork, IOptions<DatabaseSettings> dbSettings)
         {
             _unitOfWork = unitOfWork;
+            _dbSettings = dbSettings.Value;
         }
 
         private string ResolvePathToDockerPath(string path)
         {
-            const string windowsPrefix = @"C:\Users\Admin\Desktop\submissions";
+            string windowsPrefix = _dbSettings.WindowsPrefixPath;
+            string dockerPrefix = _dbSettings.StudentBasePath;
             if (path.StartsWith(windowsPrefix, StringComparison.OrdinalIgnoreCase))
             {
-                return path.Replace(windowsPrefix, "/students")
+                return path.Replace(windowsPrefix, dockerPrefix)
                            .Replace("\\", "/");
             }
 
@@ -28,8 +32,8 @@ namespace PRN232.NMS.Services.Services
 
         private string ResolvePathToWindowPath(string path)
         {
-            const string dockerPrefix = "/students";
-            const string windowsPrefix = @"C:\Users\Admin\Desktop\submissions";
+            string dockerPrefix = _dbSettings.StudentBasePath;
+            string windowsPrefix = _dbSettings.WindowsPrefixPath;
 
             if (path.StartsWith(dockerPrefix, StringComparison.OrdinalIgnoreCase))
             {

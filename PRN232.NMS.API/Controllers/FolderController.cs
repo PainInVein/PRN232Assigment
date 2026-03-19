@@ -5,7 +5,7 @@ using PRN232.NMS.Services.Services;
 namespace PRN232.NMS.API.Controllers
 {
     [ApiController]
-    [Route("api")]
+    [Route("api/folders")]
     public class FolderController : ControllerBase
     {
         private readonly FolderService _folderService;
@@ -15,7 +15,7 @@ namespace PRN232.NMS.API.Controllers
             _folderService = folderService;
         }
 
-        [HttpPost("get-folders")]
+        [HttpPost]
         public async Task<IActionResult> GetFolders([FromBody] GetSubfoldersRequest request)
         {
             try

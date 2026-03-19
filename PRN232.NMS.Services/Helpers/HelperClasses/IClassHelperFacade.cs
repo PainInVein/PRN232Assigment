@@ -19,6 +19,6 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
         public List<ApiTestCase> GetTestSuite();
         public int GetFreePort(int start = 5100, int end = 5200);
         public void ClearTokenCache();
-        public string ResolveWindowsPathToContainer(string windowsPath);
+        public string ResolveWindowsPathToContainer(string windowsPath, string prefixPath, string dockerPath);
     }
 }

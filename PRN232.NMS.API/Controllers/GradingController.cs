@@ -6,7 +6,7 @@ using PRN232.NMS.Services;
 namespace PRN232.NMS.API.Controllers
 {
     [ApiController]
-    [Route("api/grade")]
+    [Route("api/grading")]
     public class GradingController : ControllerBase
     {
         private readonly GradingService _grader;

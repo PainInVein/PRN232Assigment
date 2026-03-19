@@ -57,7 +57,9 @@ public class GradingService
         {
             // Chỗ này copy project submission vào temp folder
             //var baseTempFolder = _dbSettings.BaseTempFolder; // Local
-            var resolvedProjectPath = _helperFacade.ResolveWindowsPathToContainer(req.ProjectFolder);
+            var prefixPath = _dbSettings.PrefixPath; // Docker deploy
+            var dockerPath = _dbSettings.StudentBasePath; // Docker deploy
+            var resolvedProjectPath = _helperFacade.ResolveWindowsPathToContainer(req.ProjectFolder, prefixPath, dockerPath);
             var baseTempFolder = _dbSettings.BaseTempFolder; // Docker deploy
             tempDir = Path.Combine(baseTempFolder, $"grade-{Guid.NewGuid():N}");
             Directory.CreateDirectory(tempDir);
@@ -177,7 +179,9 @@ public class GradingService
             try
             {
                 //var baseTempFolder = _dbSettings.BaseTempFolder; // Local
-                var resolvedProjectPath = _helperFacade.ResolveWindowsPathToContainer(submission.ProjectFolder);
+                var prefixPath = _dbSettings.PrefixPath; // Docker deploy
+                var dockerPath = _dbSettings.StudentBasePath; // Docker deploy
+                var resolvedProjectPath = _helperFacade.ResolveWindowsPathToContainer(submission.ProjectFolder, prefixPath, dockerPath);
                 var baseTempFolder = _dbSettings.BaseTempFolder; // Docker deploy
                 tempDir = Path.Combine(baseTempFolder, $"grade-{Guid.NewGuid():N}");
                 Directory.CreateDirectory(tempDir);

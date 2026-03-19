@@ -109,9 +109,9 @@ namespace PRN232.NMS.Services.Helpers.HelperClasses
         {
             _tokenHelper._tokenCache.Clear();
         }
-        public string ResolveWindowsPathToContainer(string windowsPath)
+        public string ResolveWindowsPathToContainer(string windowsPath, string prefixPath, string dockerPath)
         {
-            return _windowsPathToContainerHelper.ResolveWindowsPathToContainer(windowsPath);
+            return _windowsPathToContainerHelper.ResolveWindowsPathToContainer(windowsPath, prefixPath, dockerPath);
         }
     }
 }
