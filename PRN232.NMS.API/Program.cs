@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PRN232.NMS.API.Models.ResponseModels;
 using PRN232.NMS.Repo.DBContext;
-using PRN232.NMS.Services;
+using PRN232.NMS.Services.BusinessModel;
 using PRN232.NMS.Services.Helpers.HelperClasses;
 using PRN232.NMS.Services.Models.MappingTool;
 using PRN232.NMS.Services.Services;

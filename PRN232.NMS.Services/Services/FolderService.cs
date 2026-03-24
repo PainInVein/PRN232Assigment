@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.Options;
+﻿using AutoMapper;
+using Microsoft.Extensions.Options;
 using PRN232.NMS.Repo.Entities;
+using PRN232.NMS.Services.BusinessModel;
+using PRN232.NMS.Services.Models.ResponseModels;
 using Repositories;
-using System.Threading.Tasks;
 
 namespace PRN232.NMS.Services.Services
 {
@@ -10,11 +12,13 @@ namespace PRN232.NMS.Services.Services
 
         private readonly IUnitOfWork _unitOfWork;
         private readonly DatabaseSettings _dbSettings;
+        private readonly IMapper _mapper;
 
-        public FolderService(IUnitOfWork unitOfWork, IOptions<DatabaseSettings> dbSettings)
+        public FolderService(IUnitOfWork unitOfWork, IOptions<DatabaseSettings> dbSettings, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _dbSettings = dbSettings.Value;
+            _mapper = mapper;
         }
 
         private string ResolvePathToDockerPath(string path)
@@ -116,6 +120,23 @@ namespace PRN232.NMS.Services.Services
             await _unitOfWork.GradingResultRepository.CreateRangeAsync(submissionData);
 
             return result;
+        }
+
+        public async Task<(List<SubmissionsGetAllResponse> Items, int TotalItems)> GetSubmissionInfoPagedAsync(int page, int pageSize, string? searchTerm, string? sortOption, List<string>? status)
+        {
+            try
+            {
+                var items = await _unitOfWork.GradingResultRepository
+                    .GetAllSubmissionsAsync((page - 1) * pageSize, pageSize, searchTerm, sortOption, status);
+
+                var returnItem = _mapper.Map<List<SubmissionsGetAllResponse>>(items.Items);
+
+                return (returnItem, items.TotalItems);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
     }
 }

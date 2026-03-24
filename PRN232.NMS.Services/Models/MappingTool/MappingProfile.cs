@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using PRN232.NMS.Repo.Entities;
 using PRN232.NMS.Services.BusinessModel;
 using PRN232.NMS.Services.Helpers.HelperEntities;
 using PRN232.NMS.Services.Models.RequestModels;
@@ -13,6 +14,7 @@ namespace PRN232.NMS.Services.Models.MappingTool
             CreateMap<GradingRequest, SingleStudentGrading>();
             CreateMap<GradingResultWithListLogs, GradingResultSingleResponse>();
             CreateMap<GradingAllResult, GradingResultAllResponse>();
+            CreateMap<GradingResult, SubmissionsGetAllResponse>();
         }
     }
 }
