@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PRN232.NMS.API.Models.RequestModels;
+using PRN232.NMS.Services.Models.RequestModels;
 using PRN232.NMS.Services.Services;
 
 namespace PRN232.NMS.API.Controllers

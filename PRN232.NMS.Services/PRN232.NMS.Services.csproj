@@ -10,6 +10,10 @@
     <ProjectReference Include="..\PRN232.NMS.Repo\PRN232.NMS.Repo.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+		<PackageReference Include="AutoMapper" Version="14.0.0" />
+	</ItemGroup>
+
   <ItemGroup>
     <Folder Include="Interfaces\" />
   </ItemGroup>

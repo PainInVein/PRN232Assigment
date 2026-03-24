@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace PRN232.NMS.API.Models.RequestModels
+namespace PRN232.NMS.Services.Models.RequestModels
 {
     public class GetSubfoldersRequest
     {

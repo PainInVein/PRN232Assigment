@@ -1,15 +1,17 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using AutoMapper;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PRN232.NMS.Repo.DBContext;
 using PRN232.NMS.Repo.Entities;
 using PRN232.NMS.Services;
+using PRN232.NMS.Services.BusinessModel;
 using PRN232.NMS.Services.Helpers.HelperClasses;
 using PRN232.NMS.Services.Helpers.HelperEntities;
+using PRN232.NMS.Services.Models.RequestModels;
+using PRN232.NMS.Services.Models.ResponseModels;
 using PRN232.NMS.Services.Services;
 using Repositories;
 using System.Diagnostics;
-using System.Runtime;
 
 namespace Grader.Services;
 
@@ -21,6 +23,7 @@ public class GradingService
     private readonly IUnitOfWork _unitOfWork;
     private readonly DatabaseSettings _dbSettings;
     private readonly string _schemaPath;
+    private readonly IMapper _mapper;
 
 
     public GradingService(
@@ -29,7 +32,8 @@ public class GradingService
         IClassHelperFacade helperFacade,
         ExecuteTestService executeTestService,
         IUnitOfWork unitOfWork,
-        IOptions<DatabaseSettings> dbSettings
+        IOptions<DatabaseSettings> dbSettings,
+        IMapper mapper
         )
     {
         _logger = logger;
@@ -38,14 +42,19 @@ public class GradingService
         _unitOfWork = unitOfWork;
         _dbSettings = dbSettings.Value;
         _schemaPath = Path.Combine(AppContext.BaseDirectory, "SU25LeopardDB.sql");
+        _mapper = mapper;
     }
 
     // Service cham diem chinh, tra ve chi tiet ket qua de hien thi tren UI, va luu vao database
-    public async Task<GradingResultWithListLogs> GradeAsync(GradingRequest req, CancellationToken ct = default)
+    public async Task<GradingResultSingleResponse> GradeAsync(GradingRequest req, CancellationToken ct = default)
     {
+        var request = _mapper.Map<SingleStudentGrading>(req);
+
+        GradingResultSingleResponse response;
+
         var result = new GradingResultWithListLogs
         {
-            ProjectFolder = req.ProjectFolder,
+            ProjectFolder = request.ProjectFolder,
             Logs = new List<string> { $"Started grading at {DateTimeOffset.Now:HH:mm:ss}" }
         };
 
@@ -59,7 +68,7 @@ public class GradingService
             //var baseTempFolder = _dbSettings.BaseTempFolder; // Local
             var prefixPath = _dbSettings.PrefixPath; // Docker deploy
             var dockerPath = _dbSettings.StudentBasePath; // Docker deploy
-            var resolvedProjectPath = _helperFacade.ResolveWindowsPathToContainer(req.ProjectFolder, prefixPath, dockerPath);
+            var resolvedProjectPath = _helperFacade.ResolveWindowsPathToContainer(request.ProjectFolder, prefixPath, dockerPath);
             var baseTempFolder = _dbSettings.BaseTempFolder; // Docker deploy
             tempDir = Path.Combine(baseTempFolder, $"grade-{Guid.NewGuid():N}");
             Directory.CreateDirectory(tempDir);
@@ -87,7 +96,8 @@ public class GradingService
             {
                 result.Status = "BuildFailed";
                 result.Score = 0;
-                return result;
+                response = _mapper.Map<GradingResultSingleResponse>(result);
+                return response;
             }
 
             // Chạy API từ temp folder, truyền logs vào để capture output
@@ -99,7 +109,9 @@ public class GradingService
             if (!started)
             {
                 result.Status = "StartupTimeout";
-                return result;
+                response = _mapper.Map<GradingResultSingleResponse>(result);
+
+                return response;
             }
             result.Logs.Add($"API responding on {baseUrl}");
 
@@ -147,19 +159,24 @@ public class GradingService
             await _unitOfWork.GradingResultRepository.CreateAsync(mappedResult);
         }
 
-        return result;
+        response = _mapper.Map<GradingResultSingleResponse>(result);
+
+        return response;
     }
 
 
 
-     //Service chấm điểm tất cả submission
-    public async Task<GradingAllResult> GradeAllAsync(CancellationToken ct = default)
+    //Service chấm điểm tất cả submission
+    public async Task<GradingResultAllResponse> GradeAllAsync(CancellationToken ct = default)
     {
+
         var overallResult = new GradingAllResult
         {
             ProjectFolder = "ALL_SUBMISSIONS",
             Logs = new List<string> { $"Started grading ALL submissions at {DateTimeOffset.Now:HH:mm:ss}" }
         };
+
+        GradingResultAllResponse response;
 
         List<GradingResult> allSubmissions = await _unitOfWork.GradingResultRepository.GetAllAsync();
 
@@ -275,6 +292,9 @@ public class GradingService
 
         overallResult.Logs.Add($"Finished grading {allSubmissions.Count} submissions at {DateTimeOffset.Now:HH:mm:ss}");
         overallResult.Status = "AllProcessed";
-        return overallResult;
+
+        response = _mapper.Map<GradingResultAllResponse>(overallResult);
+
+        return response;
     }
 }

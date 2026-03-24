@@ -6,11 +6,10 @@
 
         public bool IsSuccess { get; set; }
         public T? Data { get; set; }
+        public object? Errors { get; set; }
 
-        public string? Errors { get; set; }
-
-
-        public ResponseDTO(string message, bool isSuccess, T? data, string? errors)
+        public ResponseDTO() { }
+        public ResponseDTO(string message, bool isSuccess, T? data, object? errors)
         {
             Message = message;
             IsSuccess = isSuccess;
