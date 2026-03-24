@@ -15,6 +15,7 @@ namespace PRN232.NMS.Services.Models.MappingTool
             CreateMap<GradingResultWithListLogs, GradingResultSingleResponse>();
             CreateMap<GradingAllResult, GradingResultAllResponse>();
             CreateMap<GradingResult, SubmissionsGetAllResponse>();
+            CreateMap<GradingResult, GetSubmissionByIdResponse>();
         }
     }
 }

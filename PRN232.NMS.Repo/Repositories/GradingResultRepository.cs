@@ -66,5 +66,22 @@ namespace PRN232.NMS.Repo.Repositories
 
             return (items ?? new List<GradingResult>(), totalItems);
         }
+
+        public async Task<GradingResult?> GetByIdDetailedAsync(int id)
+        {
+            return await _context.GradingResults
+                .Where(n => n.StudentId == id)
+                .Select(n => new GradingResult
+                {
+                    StudentId = n.StudentId,
+                    StudentName = n.StudentName,
+                    ProjectFolder = n.ProjectFolder,
+                    Score = n.Score,
+                    Logs = n.Logs,
+                    Points = n.Points,
+                    Status = n.Status
+                })
+                .FirstOrDefaultAsync();
+        }
     }
 }

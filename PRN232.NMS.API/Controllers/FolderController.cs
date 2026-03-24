@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Azure;
+using Microsoft.AspNetCore.Mvc;
 using PRN232.NMS.API.Models.ResponseModels;
 using PRN232.NMS.Services.Models.RequestModels;
 using PRN232.NMS.Services.Models.ResponseModels;
@@ -71,6 +72,18 @@ namespace PRN232.NMS.API.Controllers
             var response = new ResponseDTO<PagedResult<SubmissionsGetAllResponse>>(message: "Submissions retrieved successfully", isSuccess: true, data: pagedResponse, errors: null);
 
             return Ok(response);
+        }
+
+        [HttpGet("{studentId}")]
+        public async Task<IActionResult> GetById([FromRoute] GetSubmissionByIdRequest getSubmissionByIdRequest)
+        {
+            var result = await _folderService.GetByIdAsync(getSubmissionByIdRequest.studentId);
+            if (result == null)
+            {
+                return NotFound(new ResponseDTO<object>(message: "Submission not found", isSuccess: false, data: null, errors: $"Resource with id: {getSubmissionByIdRequest.studentId} not found"));
+            }
+
+            return Ok(new ResponseDTO<object>(message: "Submission found", isSuccess: true, data: result, errors: null));
         }
     }
 }

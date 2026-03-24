@@ -138,5 +138,15 @@ namespace PRN232.NMS.Services.Services
                 throw new Exception(ex.Message);
             }
         }
+
+        public async Task<GetSubmissionByIdResponse?> GetByIdAsync(int id)
+        {
+            var result = await _unitOfWork.GradingResultRepository.GetByIdDetailedAsync(id);
+
+            if (result == null)
+                return null;
+
+            return _mapper.Map<GetSubmissionByIdResponse>(result);
+        }
     }
 }
