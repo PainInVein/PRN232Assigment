@@ -148,5 +148,27 @@ namespace PRN232.NMS.Services.Services
 
             return _mapper.Map<GetSubmissionByIdResponse>(result);
         }
+
+        public async Task<string> UpdateFolderPathAsync(int id, string folderPath)
+        {
+            var existingPath = await _unitOfWork.GradingResultRepository.GetByIdAsync(id);
+            if (existingPath == null) return $"Submission with {id} not found";
+
+            string projectPath = ResolvePathToDockerPath(folderPath);
+            projectPath = projectPath.Trim();
+            projectPath = Path.GetFullPath(projectPath);
+
+            bool folderExists = Directory.Exists(projectPath);
+
+            if (!folderExists) return $"The folder '{projectPath}' does not exist.";
+
+            var dirInfo = new DirectoryInfo(projectPath);
+
+            var updatedPath = ResolvePathToWindowPath(dirInfo.FullName);
+
+            existingPath.ProjectFolder = updatedPath;
+            _unitOfWork.GradingResultRepository.Update(existingPath);
+            return string.Empty;
+        }
     }
 }

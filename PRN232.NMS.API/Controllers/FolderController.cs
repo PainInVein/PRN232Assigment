@@ -4,6 +4,7 @@ using PRN232.NMS.API.Models.ResponseModels;
 using PRN232.NMS.Services.Models.RequestModels;
 using PRN232.NMS.Services.Models.ResponseModels;
 using PRN232.NMS.Services.Services;
+using System.ComponentModel.DataAnnotations;
 
 namespace PRN232.NMS.API.Controllers
 {
@@ -74,16 +75,28 @@ namespace PRN232.NMS.API.Controllers
             return Ok(response);
         }
 
-        [HttpGet("{studentId}")]
-        public async Task<IActionResult> GetById([FromRoute] GetSubmissionByIdRequest getSubmissionByIdRequest)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById([FromRoute][Range(1, int.MaxValue, ErrorMessage = "StudentId must be greater than 0")] int id)
         {
-            var result = await _folderService.GetByIdAsync(getSubmissionByIdRequest.studentId);
+            var result = await _folderService.GetByIdAsync(id);
             if (result == null)
             {
-                return NotFound(new ResponseDTO<object>(message: "Submission not found", isSuccess: false, data: null, errors: $"Resource with id: {getSubmissionByIdRequest.studentId} not found"));
+                return NotFound(new ResponseDTO<object>(message: "Submission not found", isSuccess: false, data: null, errors: $"Resource with id: {id} not found"));
             }
 
             return Ok(new ResponseDTO<object>(message: "Submission found", isSuccess: true, data: result, errors: null));
+        }
+
+        [HttpPut("{id}/path")]
+        public async Task<IActionResult> UpdateFolderPath([FromRoute][Range(1, int.MaxValue, ErrorMessage = "StudentId must be greater than 0")] int id, 
+            [FromBody] SubmissionPathUpdateRequest updateSubmissionPathRequest)
+        {
+            var result = await _folderService.UpdateFolderPathAsync(id, updateSubmissionPathRequest.ProjectFolder);
+            if (!string.IsNullOrEmpty(result))
+            {
+                return NotFound(new ResponseDTO<object>(message: result, isSuccess: false, data: null, errors: null));
+            }
+            return Ok(new ResponseDTO<object>(message: "Folder path updated successfully", isSuccess: true, data: null, errors: null));
         }
     }
 }
