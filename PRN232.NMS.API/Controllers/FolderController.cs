@@ -88,7 +88,7 @@ namespace PRN232.NMS.API.Controllers
         }
 
         [HttpPut("{id}/path")]
-        public async Task<IActionResult> UpdateFolderPath([FromRoute][Range(1, int.MaxValue, ErrorMessage = "StudentId must be greater than 0")] int id, 
+        public async Task<IActionResult> UpdateFolderPath([FromRoute][Range(1, int.MaxValue, ErrorMessage = "StudentId must be greater than 0")] int id,
             [FromBody] SubmissionPathUpdateRequest updateSubmissionPathRequest)
         {
             var result = await _folderService.UpdateFolderPathAsync(id, updateSubmissionPathRequest.ProjectFolder);
@@ -97,6 +97,17 @@ namespace PRN232.NMS.API.Controllers
                 return NotFound(new ResponseDTO<object>(message: result, isSuccess: false, data: null, errors: null));
             }
             return Ok(new ResponseDTO<object>(message: "Folder path updated successfully", isSuccess: true, data: null, errors: null));
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteSubmission([FromRoute][Range(1, int.MaxValue, ErrorMessage = "Submission Id must be greater than 0")] int id)
+        {
+            var result = await _folderService.HardDeleteSubmissionAsync(id);
+            if (!string.IsNullOrEmpty(result))
+            {
+                return NotFound(new ResponseDTO<object>(message: result, isSuccess: false, data: null, errors: null));
+            }
+            return Ok(new ResponseDTO<object>(message: "Submission deleted successfully", isSuccess: true, data: null, errors: null));
         }
     }
 }

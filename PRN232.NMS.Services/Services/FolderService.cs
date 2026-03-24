@@ -170,5 +170,15 @@ namespace PRN232.NMS.Services.Services
             _unitOfWork.GradingResultRepository.Update(existingPath);
             return string.Empty;
         }
+
+        public async Task<string> HardDeleteSubmissionAsync(int id)
+        {
+            var existingPath = await _unitOfWork.GradingResultRepository.GetByIdAsync(id);
+            if (existingPath == null) return $"Submission with {id} not found";
+
+            await _unitOfWork.GradingResultRepository.RemoveAsync(existingPath);
+
+            return string.Empty;
+        }
     }
 }
