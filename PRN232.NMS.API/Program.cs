@@ -19,6 +19,19 @@ builder.Services.AddDbContext<Prn232lab3Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddControllers();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
+});
+
+
 builder.Services.AddScoped<IClassHelperFacade, ClassHelperFacade>();
 builder.Services.AddScoped<CopyDirectoryHelper>();
 builder.Services.AddScoped<CreateDatabaseHelper>();
@@ -82,6 +95,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("AllowReactApp");
 
 //app.UseHttpsRedirection();
 
