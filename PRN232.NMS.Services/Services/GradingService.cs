@@ -296,4 +296,133 @@ public class GradingService
 
         return response;
     }
+
+
+
+    // Service cham diem bang id, tra ve chi tiet ket qua de hien thi tren UI, va luu vao database
+    public async Task<GradingResultSingleResponse> GradeByIdAsync(int id, CancellationToken ct = default)
+    {
+        GradingResultSingleResponse response;
+
+        var submission = await _unitOfWork.GradingResultRepository.GetByIdAsync(id);
+
+        var result = new GradingResultWithListLogs
+        {
+            ProjectFolder = submission.ProjectFolder,
+            Logs = new List<string> { $"Started grading at {DateTimeOffset.Now:HH:mm:ss}" }
+        };
+
+        string? tempDir = null;
+        string? dbName = null;
+        Process? apiProcess = null;
+
+        try
+        {
+            // Chỗ này copy project submission vào temp folder
+            //var baseTempFolder = _dbSettings.BaseTempFolder; // Local
+            var prefixPath = _dbSettings.PrefixPath; // Docker deploy
+            var dockerPath = _dbSettings.StudentBasePath; // Docker deploy
+            var resolvedProjectPath = _helperFacade.ResolveWindowsPathToContainer(submission.ProjectFolder, prefixPath, dockerPath);
+            var baseTempFolder = _dbSettings.BaseTempFolder; // Docker deploy
+            tempDir = Path.Combine(baseTempFolder, $"grade-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempDir);
+            _helperFacade.CopyDirectory(resolvedProjectPath, tempDir);
+            result.Logs.Add("Project copied to temporary folder");
+
+            // Chỗ này tạo database tạm thời cho sinh viên
+            var guidPart = Guid.NewGuid().ToString("N")[..8];
+            dbName = $"Grade_{DateTime.UtcNow:yyyyMMddHHmmss}_{guidPart}";
+            await _helperFacade.CreateDatabaseAsync(dbName, _dbSettings.MasterConnectionString);
+            result.Logs.Add($"Database {dbName} created");
+
+            var studentConnStr = _helperFacade.BuildStudentConnectionString(dbName, _dbSettings.UserId, _dbSettings.Password, _dbSettings.ServerName);
+            //await _helperFacade.ApplySchemaAsync(dbName, _dbSettings.SchemaPath, studentConnStr); // Local
+            await _helperFacade.ApplySchemaAsync(dbName, _schemaPath, studentConnStr); // Docker deploy
+            result.Logs.Add("Schema applied");
+
+            // Chỉnh sửa connection string trong project để trỏ vào database mới tạo
+            await _helperFacade.PatchConnectionStringAsync(tempDir, studentConnStr);
+            result.Logs.Add("Connection string updated");
+
+            // Build project
+            bool buildOk = await _helperFacade.BuildAsync(tempDir, result.Logs);
+            if (!buildOk)
+            {
+                result.Status = "BuildFailed";
+                result.Score = 0;
+                response = _mapper.Map<GradingResultSingleResponse>(result);
+
+                submission.Status = result.Status;
+                await _unitOfWork.GradingResultRepository.UpdateAsync(submission);
+
+                return response;
+            }
+
+            // Chạy API từ temp folder, truyền logs vào để capture output
+            int port = _helperFacade.GetFreePort(5100, 5200);
+            string baseUrl = $"http://localhost:{port}";
+            apiProcess = _helperFacade.StartApi(tempDir, port, result.Logs);
+
+            bool started = await _helperFacade.WaitForApiReadyAsync(baseUrl, ct);
+            if (!started)
+            {
+                result.Status = "StartupTimeout";
+                response = _mapper.Map<GradingResultSingleResponse>(result);
+
+                submission.Status = result.Status;
+                await _unitOfWork.GradingResultRepository.UpdateAsync(submission);
+
+                return response;
+            }
+            result.Logs.Add($"API responding on {baseUrl}");
+
+            // Thử nghiệm route discovery để tìm ra các endpoint thực tế trên API của sinh viên
+            var routeMap = await _helperFacade.DiscoverRoutesAsync(baseUrl, result.Logs);
+
+            // Chay qua từng test case, sử dụng routeMap để resolve đường dẫn chính xác, và tính điểm
+            var outcomes = await _executeTestService.ExecuteApiTestsAsync(baseUrl, result.Logs, routeMap);
+            result.Score = outcomes.Where(o => o.Passed).Sum(o => o.Points);
+            result.Logs.AddRange(outcomes.Select(o => $"{o.Name,-32} {(o.Passed ? "PASS" : "FAIL"),-6} {o.Points,3} pts  {o.Message ?? ""}"));
+
+            result.Status = result.Score >= 5 ? "Passed" : "Failed";
+        }
+        catch (Exception ex)
+        {
+            result.Status = "Exception";
+            result.Logs.Add($"CRITICAL: {ex.GetType().Name}: {ex.Message}");
+
+            submission.Status = result.Status;
+            await _unitOfWork.GradingResultRepository.UpdateAsync(submission);
+
+            _logger.LogError(ex, "Grading crashed");
+        }
+        finally
+        {
+            // Dọn sạch database và process sau khi xong
+            if (apiProcess is { HasExited: false })
+            {
+                try { apiProcess.Kill(true); } catch { }
+                result.Logs.Add("API process terminated");
+            }
+
+            if (dbName != null) await _helperFacade.TryDropDatabaseAsync(dbName, _dbSettings.MasterConnectionString);
+            if (tempDir != null && Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, true); }
+                catch { result.Logs.Add("Warning: could not delete temp folder"); }
+            }
+
+            result.FinishedAt = DateTime.UtcNow;
+
+            submission.Status = result.Status;
+            submission.Score = result.Score;
+            submission.Logs = string.Join("\n", result.Logs);
+
+            await _unitOfWork.GradingResultRepository.UpdateAsync(submission);
+        }
+
+        response = _mapper.Map<GradingResultSingleResponse>(result);
+
+        return response;
+    }
 }

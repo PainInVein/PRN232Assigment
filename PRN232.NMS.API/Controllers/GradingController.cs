@@ -6,6 +6,7 @@ using PRN232.NMS.Services;
 using PRN232.NMS.Services.Helpers.HelperEntities;
 using PRN232.NMS.Services.Models.RequestModels;
 using PRN232.NMS.Services.Models.ResponseModels;
+using System.ComponentModel.DataAnnotations;
 
 namespace PRN232.NMS.API.Controllers
 {
@@ -34,6 +35,14 @@ namespace PRN232.NMS.API.Controllers
 
             var response = new ResponseDTO<GradingResultAllResponse>(message: "Graded successfully", isSuccess: true, data: result, errors: null);
 
+            return Ok(response);
+        }
+
+        [HttpPost("single-directory/{id}")]
+        public async Task<IActionResult> RegradeAsync([FromRoute][Range(1, int.MaxValue, ErrorMessage = "StudentId must be greater than 0")] int id)
+        {
+            var result = await _grader.GradeByIdAsync(id);
+            var response = new ResponseDTO<GradingResultSingleResponse>(message: "Regraded successfully", isSuccess: true, data: result, errors: null);
             return Ok(response);
         }
     }

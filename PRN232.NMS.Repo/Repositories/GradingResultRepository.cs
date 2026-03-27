@@ -83,5 +83,12 @@ namespace PRN232.NMS.Repo.Repositories
                 })
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<GradingResult?> GetBySubmissionsPath(string projectFolder)
+        {
+            return await _context.GradingResults
+                .Where(n => n.ProjectFolder == projectFolder)
+                .FirstOrDefaultAsync();
+        }
     }
 }
