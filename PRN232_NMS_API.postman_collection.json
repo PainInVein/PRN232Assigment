@@ -2,13 +2,23 @@
 	"info": {
 		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
 		"name": "PRN232 NMS API",
-		"description": "Postman collection for testing all PRN232.NMS.API endpoints deployed on Docker at localhost:8080",
+		"description": "Postman collection for testing all PRN232.NMS.API endpoints deployed on Docker at localhost:8080. Includes automated tests to verify responses and extract dynamic variables.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
 		{
 			"key": "baseUrl",
 			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "submissionId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "submissionPathSafe",
+			"value": "\"C:\\\\Users\\\\Admin\\\\Desktop\\\\submissions\\\\SE171286_ThinhVQSE171286\"",
 			"type": "string"
 		}
 	],
@@ -70,6 +80,17 @@
 									"pm.test(\"Response isSuccess is true\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.isSuccess).to.be.true;",
+									"});",
+									"",
+									"pm.test(\"Extract dynamic parameters for downstream tests\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.items && jsonData.data.items.length > 0) {",
+									"        var firstItem = jsonData.data.items[0];",
+									"        pm.collectionVariables.set(\"submissionId\", firstItem.studentId);",
+									"        if (firstItem.projectFolder) {",
+									"            pm.collectionVariables.set(\"submissionPathSafe\", JSON.stringify(firstItem.projectFolder));",
+									"        }",
+									"    }",
 									"});"
 								]
 							}
@@ -147,9 +168,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/folders/1",
+							"raw": "{{baseUrl}}/api/folders/{{submissionId}}",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "folders", "1"]
+							"path": ["api", "folders", "{{submissionId}}"]
 						}
 					}
 				},
@@ -182,41 +203,12 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"projectFolder\": \"C:\\\\Users\\\\Admin\\\\Desktop\\\\submissions\\\\SE171286_ThinhVQSE171286\"\n}"
+							"raw": "{\n  \"projectFolder\": {{submissionPathSafe}}\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/folders/1/path",
+							"raw": "{{baseUrl}}/api/folders/{{submissionId}}/path",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "folders", "1", "path"]
-						}
-					}
-				},
-				{
-					"name": "Delete Submission",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Status code is 200 OK\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"pm.test(\"Response isSuccess is true\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.isSuccess).to.be.true;",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/folders/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "folders", "1"]
+							"path": ["api", "folders", "{{submissionId}}", "path"]
 						}
 					}
 				},
@@ -282,7 +274,7 @@
 							"request": {
 								"method": "PUT",
 								"header": [{ "key": "Content-Type", "value": "application/json" }],
-								"body": { "mode": "raw", "raw": "{\n  \"projectFolder\": \"C:\\\\Users\\\\Admin\\\\Desktop\\\\submissions\\\\SE171286_ThinhVQSE171286\"\n}" },
+								"body": { "mode": "raw", "raw": "{\n  \"projectFolder\": {{submissionPathSafe}}\n}" },
 								"url": { "raw": "{{baseUrl}}/api/folders/0/path", "host": ["{{baseUrl}}"], "path": ["api", "folders", "0", "path"] }
 							}
 						},
@@ -292,7 +284,7 @@
 								"method": "PUT",
 								"header": [{ "key": "Content-Type", "value": "application/json" }],
 								"body": { "mode": "raw", "raw": "{\n  \"projectFolder\": \"\"\n}" },
-								"url": { "raw": "{{baseUrl}}/api/folders/1/path", "host": ["{{baseUrl}}"], "path": ["api", "folders", "1", "path"] }
+								"url": { "raw": "{{baseUrl}}/api/folders/{{submissionId}}/path", "host": ["{{baseUrl}}"], "path": ["api", "folders", "{{submissionId}}", "path"] }
 							}
 						},
 						{
@@ -340,7 +332,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"projectFolder\": \"C:\\\\Users\\\\Admin\\\\Desktop\\\\submissions\\\\SE171286_ThinhVQSE171286\"\n}"
+							"raw": "{\n  \"projectFolder\": {{submissionPathSafe}}\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/students/single-directory",
@@ -372,9 +364,9 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/students/single-directory/1",
+							"raw": "{{baseUrl}}/api/students/single-directory/{{submissionId}}",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "students", "single-directory", "1"]
+							"path": ["api", "students", "single-directory", "{{submissionId}}"]
 						}
 					}
 				},
@@ -448,6 +440,41 @@
 							}
 						}
 					]
+				}
+			]
+		},
+		{
+			"name": "Cleanup (Run Last)",
+			"description": "Deletes the submission. Executed last to prevent breaking tests that rely on the valid dynamic ID.",
+			"item": [
+				{
+					"name": "Delete Submission",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response isSuccess is true\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.isSuccess).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/folders/{{submissionId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "folders", "{{submissionId}}"]
+						}
+					}
 				}
 			]
 		}
