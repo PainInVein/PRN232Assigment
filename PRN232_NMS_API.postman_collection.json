@@ -15,10 +15,28 @@
 	"item": [
 		{
 			"name": "Folders",
-			"description": "FolderController endpoints — CRUD operations on submissions/folders",
+			"description": "FolderController endpoints - CRUD operations on submissions/folders",
 			"item": [
 				{
 					"name": "Get Subfolders (Scan Directory)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is a valid JSON array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(Array.isArray(jsonData)).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -35,13 +53,28 @@
 							"raw": "{{baseUrl}}/api/folders",
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "folders"]
-						},
-						"description": "Scans the given directory and returns its subfolders (student submission directories)."
-					},
-					"response": []
+						}
+					}
 				},
 				{
 					"name": "Get All Submissions (Default Paging)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response isSuccess is true\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.isSuccess).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -50,22 +83,31 @@
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "folders"],
 							"query": [
-								{
-									"key": "Page",
-									"value": "1"
-								},
-								{
-									"key": "PageSize",
-									"value": "10"
-								}
+								{ "key": "Page", "value": "1" },
+								{ "key": "PageSize", "value": "10" }
 							]
-						},
-						"description": "Returns a paginated list of all submissions. Supports optional query parameters: SearchName, SortOption, StatusList."
-					},
-					"response": []
+						}
+					}
 				},
 				{
 					"name": "Get All Submissions (With Search & Sort)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response isSuccess is true\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.isSuccess).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -74,30 +116,33 @@
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "folders"],
 							"query": [
-								{
-									"key": "Page",
-									"value": "1"
-								},
-								{
-									"key": "PageSize",
-									"value": "10"
-								},
-								{
-									"key": "SearchName",
-									"value": "Thinh"
-								},
-								{
-									"key": "SortOption",
-									"value": "desc"
-								}
+								{ "key": "Page", "value": "1" },
+								{ "key": "PageSize", "value": "10" },
+								{ "key": "SearchName", "value": "Thinh" },
+								{ "key": "SortOption", "value": "desc" }
 							]
-						},
-						"description": "Returns a paginated list of submissions filtered by name and sorted by score."
-					},
-					"response": []
+						}
+					}
 				},
 				{
 					"name": "Get Submission By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response isSuccess is true\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.isSuccess).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -105,13 +150,28 @@
 							"raw": "{{baseUrl}}/api/folders/1",
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "folders", "1"]
-						},
-						"description": "Returns the submission with the specified ID."
-					},
-					"response": []
+						}
+					}
 				},
 				{
 					"name": "Update Folder Path",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response isSuccess is true\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.isSuccess).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "PUT",
 						"header": [
@@ -128,13 +188,28 @@
 							"raw": "{{baseUrl}}/api/folders/1/path",
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "folders", "1", "path"]
-						},
-						"description": "Updates the folder path of the submission with the specified ID."
-					},
-					"response": []
+						}
+					}
 				},
 				{
 					"name": "Delete Submission",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response isSuccess is true\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.isSuccess).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "DELETE",
 						"header": [],
@@ -142,10 +217,93 @@
 							"raw": "{{baseUrl}}/api/folders/1",
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "folders", "1"]
+						}
+					}
+				},
+				{
+					"name": "Validation Errors ❌",
+					"description": "Tests triggering 400 Bad Request via DataAnnotations like Range[1, int.MaxValue], Required, StringLength...",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 400 Bad Request\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response isSuccess is false out of bad request\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.isSuccess).to.be.false;",
+									"    pm.expect(jsonData.message).to.eql(\"Validation failed\");",
+									"});"
+								]
+							}
+						}
+					],
+					"item": [
+						{
+							"name": "[Validation] Get Subfolders (Empty length)",
+							"request": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": { "mode": "raw", "raw": "{\n  \"projectFolder\": \"\"\n}" },
+								"url": { "raw": "{{baseUrl}}/api/folders", "host": ["{{baseUrl}}"], "path": ["api", "folders"] }
+							}
 						},
-						"description": "Hard-deletes the submission with the specified ID."
-					},
-					"response": []
+						{
+							"name": "[Validation] Get Subfolders (>260 chars string)",
+							"request": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": { "mode": "raw", "raw": "{\n  \"projectFolder\": \"C:\\\\Users\\\\Admin\\\\Desktop\\\\submissions\\\\SE171286_ThinhVQSE171286\\\\very_long_project_folder_name\\\\this_will_exceed_limits\\\\more_nested_directories\\\\just_keeps_going_on_and_on_to_hit_the_string_limit_restriction_that_requires_validation_to_kick_in_and_return_400_bad_request_because_that_is_what_we_are_testing_here_1234567890_1234567890_1234567890_12345\"\n}" },
+								"url": { "raw": "{{baseUrl}}/api/folders", "host": ["{{baseUrl}}"], "path": ["api", "folders"] }
+							}
+						},
+						{
+							"name": "[Validation] Get Submission By ID (ID = 0)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": { "raw": "{{baseUrl}}/api/folders/0", "host": ["{{baseUrl}}"], "path": ["api", "folders", "0"] }
+							}
+						},
+						{
+							"name": "[Validation] Get Submission By ID (ID = -1)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": { "raw": "{{baseUrl}}/api/folders/-1", "host": ["{{baseUrl}}"], "path": ["api", "folders", "-1"] }
+							}
+						},
+						{
+							"name": "[Validation] Update Folder Path (ID = 0)",
+							"request": {
+								"method": "PUT",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": { "mode": "raw", "raw": "{\n  \"projectFolder\": \"C:\\\\Users\\\\Admin\\\\Desktop\\\\submissions\\\\SE171286_ThinhVQSE171286\"\n}" },
+								"url": { "raw": "{{baseUrl}}/api/folders/0/path", "host": ["{{baseUrl}}"], "path": ["api", "folders", "0", "path"] }
+							}
+						},
+						{
+							"name": "[Validation] Update Folder Path (Missing requirement)",
+							"request": {
+								"method": "PUT",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": { "mode": "raw", "raw": "{\n  \"projectFolder\": \"\"\n}" },
+								"url": { "raw": "{{baseUrl}}/api/folders/1/path", "host": ["{{baseUrl}}"], "path": ["api", "folders", "1", "path"] }
+							}
+						},
+						{
+							"name": "[Validation] Delete Submission (ID = 0)",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": { "raw": "{{baseUrl}}/api/folders/0", "host": ["{{baseUrl}}"], "path": ["api", "folders", "0"] }
+							}
+						}
+					]
 				}
 			]
 		},
@@ -155,6 +313,23 @@
 			"item": [
 				{
 					"name": "Grade Single Submission",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response isSuccess is true\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.isSuccess).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -171,13 +346,28 @@
 							"raw": "{{baseUrl}}/api/students/single-directory",
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "students", "single-directory"]
-						},
-						"description": "Grades a single student submission by specifying the project folder path."
-					},
-					"response": []
+						}
+					}
 				},
 				{
 					"name": "Regrade By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response isSuccess is true\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.isSuccess).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -185,13 +375,28 @@
 							"raw": "{{baseUrl}}/api/students/single-directory/1",
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "students", "single-directory", "1"]
-						},
-						"description": "Regrades a student's submission by their database ID."
-					},
-					"response": []
+						}
+					}
 				},
 				{
 					"name": "Grade All Submissions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response isSuccess is true\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.isSuccess).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -199,10 +404,50 @@
 							"raw": "{{baseUrl}}/api/students/all-directory",
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "students", "all-directory"]
+						}
+					}
+				},
+				{
+					"name": "Validation Errors ❌",
+					"description": "Tests triggering 400 Bad Request via DataAnnotations",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 400 Bad Request\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response isSuccess is false out of bad request\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.isSuccess).to.be.false;",
+									"    pm.expect(jsonData.message).to.eql(\"Validation failed\");",
+									"});"
+								]
+							}
+						}
+					],
+					"item": [
+						{
+							"name": "[Validation] Grade Single Submission (Missing path property)",
+							"request": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": { "mode": "raw", "raw": "{}" },
+								"url": { "raw": "{{baseUrl}}/api/students/single-directory", "host": ["{{baseUrl}}"], "path": ["api", "students", "single-directory"] }
+							}
 						},
-						"description": "Grades all student submissions that have been scanned/registered in the system."
-					},
-					"response": []
+						{
+							"name": "[Validation] Regrade By ID (ID = 0)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": { "raw": "{{baseUrl}}/api/students/single-directory/0", "host": ["{{baseUrl}}"], "path": ["api", "students", "single-directory", "0"] }
+							}
+						}
+					]
 				}
 			]
 		}
