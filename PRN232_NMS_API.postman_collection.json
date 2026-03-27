@@ -70,7 +70,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/folders?Page=1&PageSize=10&SearchName=Thinh&SortOption=name_asc",
+							"raw": "{{baseUrl}}/api/folders?Page=1&PageSize=10&SearchName=Thinh&SortOption=desc",
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "folders"],
 							"query": [
@@ -88,11 +88,11 @@
 								},
 								{
 									"key": "SortOption",
-									"value": "name_asc"
+									"value": "desc"
 								}
 							]
 						},
-						"description": "Returns a paginated list of submissions filtered by name and sorted."
+						"description": "Returns a paginated list of submissions filtered by name and sorted by score."
 					},
 					"response": []
 				},
@@ -151,7 +151,7 @@
 		},
 		{
 			"name": "Grading",
-			"description": "GradingController endpoints — Grade single or all student submissions",
+			"description": "GradingController endpoints — Grade single, regrade by ID, or grade all student submissions",
 			"item": [
 				{
 					"name": "Grade Single Submission",
@@ -173,6 +173,20 @@
 							"path": ["api", "students", "single-directory"]
 						},
 						"description": "Grades a single student submission by specifying the project folder path."
+					},
+					"response": []
+				},
+				{
+					"name": "Regrade By ID",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/students/single-directory/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "students", "single-directory", "1"]
+						},
+						"description": "Regrades a student's submission by their database ID."
 					},
 					"response": []
 				},
